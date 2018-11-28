@@ -127,7 +127,7 @@ export default[{
     children:[ //二级路由。对应App.vue
         {
             path:'',
-            redirect:'/home',
+            redirect:'/test',
         },
         //测试页面
         {
