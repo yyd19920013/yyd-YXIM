@@ -6,8 +6,7 @@ import {lStore} from 'js/yydjs';
 
 window.Netcall=Netcall;
 window.WebRTC=WebRTC;
-
-let data={};
+window.nimData={};
 
 const nimInit=(account,token)=>{
     reconnection();
@@ -27,9 +26,9 @@ const nimInit=(account,token)=>{
         var teamId=obj.teamId;
         var members=obj.members;
 
-        data.teamMembers=data.teamMembers||{};
-        data.teamMembers[teamId]=nim.mergeTeamMembers(data.teamMembers[teamId],members);
-        data.teamMembers[teamId]=nim.cutTeamMembers(data.teamMembers[teamId],members.invalid);
+        window.nimData.teamMembers=window.nimData.teamMembers||{};
+        window.nimData.teamMembers[teamId]=nim.mergeTeamMembers(window.nimData.teamMembers[teamId],members);
+        window.nimData.teamMembers[teamId]=nim.cutTeamMembers(window.nimData.teamMembers[teamId],members.invalid);
     };
 
     function pushMsg(msgs){
@@ -39,19 +38,24 @@ const nimInit=(account,token)=>{
 
         var sessionId=msgs[0].sessionId;
 
-        data.msgs=data.msgs||{};
-        data.msgs[sessionId]=nim.mergeMsgs(data.msgs[sessionId],msgs);
+        window.nimData.msgs=window.nimData.msgs||{};
+        window.nimData.msgs[sessionId]=nim.mergeMsgs(window.nimData.msgs[sessionId],msgs);
     };
 
     function pushSysMsgs(sysMsgs){
-        data.sysMsgs=nim.mergeSysMsgs(data.sysMsgs,sysMsgs);
+        window.nimData.sysMsgs=nim.mergeSysMsgs(window.nimData.sysMsgs,sysMsgs);
     };
 
     function nimInitFn(account,token){
+        var appKeyArr=[
+            'd6d808f3f7906a037b35e79395c6c4e0',//自己
+            '2969cb2602b021155eaee040df91367d',//测试环境
+        ];
+
         return SDK.NIM.getInstance({
             //基本配置
             debug:false,//是否打开调试模式
-            appKey:'d6d808f3f7906a037b35e79395c6c4e0',//在云信管理后台查看应用的appKey
+            appKey:appKeyArr[1],//在云信管理后台查看应用的appKey
             account:account||lStore.get('account'),//登录账户
             token:token||lStore.get('token'),//登录账户令牌
             db:false,//是否使用数据库
@@ -62,6 +66,7 @@ const nimInit=(account,token)=>{
             //连接与重连
             onconnect(res){//连接建立后的回调, 会传入一个对象, 包含登录的信息
                 vm.$emit('nimOnConnect',res);
+                window.nimData.isConnected=true;
             },
             onerror(error){//发生错误的回调, 会传入错误对象
                 vm.$emit('nimOnError',error);
@@ -92,11 +97,11 @@ const nimInit=(account,token)=>{
 
             //用户关系
             onblacklist(blacklist){//同步黑名单的回调, 会传入黑名单列表blacklist
-                data.blacklist=nim.mergeRelations(data.blacklist,blacklist);
-                data.blacklist=nim.cutRelations(data.blacklist,blacklist.invalid);
+                window.nimData.blacklist=nim.mergeRelations(window.nimData.blacklist,blacklist);
+                window.nimData.blacklist=nim.cutRelations(window.nimData.blacklist,blacklist.invalid);
 
-                vm.$emit('nimOnBlacklist',data.blacklist);
-                vm.$emit('nimOnBlacklistAll',data.blacklist);
+                vm.$emit('nimOnBlacklist',window.nimData.blacklist);
+                vm.$emit('nimOnBlacklistAll',window.nimData.blacklist);
             },
             onsyncmarkinblacklist(obj){//当前登录用户在其它端加入黑名单/从黑名单移除后的回调
                 /*
@@ -111,22 +116,22 @@ const nimInit=(account,token)=>{
                 }
 
                 function addToBlacklist(obj){
-                    data.blacklist=nim.mergeRelations(data.blacklist,obj.record);
+                    window.nimData.blacklist=nim.mergeRelations(window.nimData.blacklist,obj.record);
                 };
 
                 function removeFromBlacklist(obj){
-                    data.blacklist=nim.cutRelations(data.blacklist,obj.record);
+                    window.nimData.blacklist=nim.cutRelations(window.nimData.blacklist,obj.record);
                 };
 
-                vm.$emit('nimOnMarkInBlacklist',data.blacklist);
-                vm.$emit('nimOnBlacklistAll',data.blacklist);
+                vm.$emit('nimOnMarkInBlacklist',window.nimData.blacklist);
+                vm.$emit('nimOnBlacklistAll',window.nimData.blacklist);
             },
             onmutelist(mutelist){//同步静音列表的回调, 会传入静音列表mutelist
-                data.mutelist=nim.mergeRelations(data.mutelist,mutelist);
-                data.mutelist=nim.cutRelations(data.mutelist,mutelist.invalid);
+                window.nimData.mutelist=nim.mergeRelations(window.nimData.mutelist,mutelist);
+                window.nimData.mutelist=nim.cutRelations(window.nimData.mutelist,mutelist.invalid);
 
-                vm.$emit('nimOnMutelist',data.mutelist);
-                vm.$emit('nimOnMutelistAll',data.mutelist);
+                vm.$emit('nimOnMutelist',window.nimData.mutelist);
+                vm.$emit('nimOnMutelistAll',window.nimData.mutelist);
             },
             onsyncmarkinmutelist(obj){//当前登录用户在其它端加入静音列表/从静音列表移除后的回调
                 /*
@@ -142,24 +147,24 @@ const nimInit=(account,token)=>{
                 }
 
                 function addToMutelist(obj){
-                    data.mutelist=nim.mergeRelations(data.mutelist,obj.record);
+                    window.nimData.mutelist=nim.mergeRelations(window.nimData.mutelist,obj.record);
                 };
 
                 function removeFromMutelist(obj) {
-                    data.mutelist=nim.cutRelations(data.mutelist,obj.record);
+                    window.nimData.mutelist=nim.cutRelations(window.nimData.mutelist,obj.record);
                 };
 
-                vm.$emit('nimOnMarkInMutelist',data.mutelist);
-                vm.$emit('nimOnMutelistAll',data.mutelist);
+                vm.$emit('nimOnMarkInMutelist',window.nimData.mutelist);
+                vm.$emit('nimOnMutelistAll',window.nimData.mutelist);
             },
 
             //好友关系
             onfriends(friends){//同步好友列表的回调,会传入好友列表
-                data.friends=nim.mergeFriends(data.friends,friends);
-                data.friends=nim.cutFriends(data.friends,friends.invalid);
+                window.nimData.friends=nim.mergeFriends(window.nimData.friends,friends);
+                window.nimData.friends=nim.cutFriends(window.nimData.friends,friends.invalid);
 
-                vm.$emit('nimOnFriends',data.friends);
-                vm.$emit('nimOnFriendsAll',data.friends);
+                vm.$emit('nimOnFriends',window.nimData.friends);
+                vm.$emit('nimOnFriendsAll',window.nimData.friends);
             },
             onsyncfriendaction(obj){//当前登录用户在其它端进行好友相关的操作后的回调
                 switch (obj.type) {
@@ -184,77 +189,77 @@ const nimInit=(account,token)=>{
                 }
 
                 function onAddFriend(friend){
-                    data.friends=nim.mergeFriends(data.friends,friend);
+                    window.nimData.friends=nim.mergeFriends(window.nimData.friends,friend);
                 };
 
                 function onDeleteFriend(account){
-                    data.friends=nim.cutFriendsByAccounts(data.friends,account);
+                    window.nimData.friends=nim.cutFriendsByAccounts(window.nimData.friends,account);
                 };
 
                 function onUpdateFriend(friend){
-                    data.friends=nim.mergeFriends(data.friends,friend);
+                    window.nimData.friends=nim.mergeFriends(window.nimData.friends,friend);
                 };
 
-                vm.$emit('nimOnSyncFriendAction',data.friends);
-                vm.$emit('nimOnFriendsAll',data.friends);
+                vm.$emit('nimOnSyncFriendAction',window.nimData.friends);
+                vm.$emit('nimOnFriendsAll',window.nimData.friends);
             },
 
             //用户名片
             onmyinfo(user){//同步登录用户名片的回调, 会传入用户名片
-                data.myInfo=user;
+                window.nimData.myInfo=user;
 
-                vm.$emit('nimOnMyInfo',data.myInfo);
-                vm.$emit('nimOnMyInfoAll',data.myInfo);
+                vm.$emit('nimOnMyInfo',window.nimData.myInfo);
+                vm.$emit('nimOnMyInfoAll',window.nimData.myInfo);
             },
             onupdatemyinfo(user){//当前登录用户在其它端修改自己的个人名片之后的回调,会传入用户名片
-                data.myInfo=NIM.util.merge(data.myInfo,user);
+                window.nimData.myInfo=NIM.util.merge(window.nimData.myInfo,user);
 
-                vm.$emit('nimOnUpdateMyInfo',data.myInfo);
-                vm.$emit('nimOnMyInfoAll',data.myInfo);
+                vm.$emit('nimOnUpdateMyInfo',window.nimData.myInfo);
+                vm.$emit('nimOnMyInfoAll',window.nimData.myInfo);
             },
             onusers(users){//同步好友用户名片的回调,会传入用户名片数组
-                data.users=nim.mergeUsers(data.users,users);
+                window.nimData.users=nim.mergeUsers(window.nimData.users,users);
 
-                vm.$emit('nimOnUsers',data.users);
-                vm.$emit('nimOnUsersAll',data.users);
+                vm.$emit('nimOnUsers',window.nimData.users);
+                vm.$emit('nimOnUsersAll',window.nimData.users);
             },
             onupdateuser(user){//用户名片更新后的回调,会传入用户名片
-                data.users=nim.mergeUsers(data.users,user);
+                window.nimData.users=nim.mergeUsers(window.nimData.users,user);
 
-                vm.$emit('nimOnUpdateUser',data.users);
-                vm.$emit('nimOnUsersAll',data.users);
+                vm.$emit('nimOnUpdateUser',window.nimData.users);
+                vm.$emit('nimOnUsersAll',window.nimData.users);
             },
 
             //机器人列表的回调
             onrobots(robots){//客户私有化方案不支持
-                data.robots=robots;
+                window.nimData.robots=robots;
 
-                vm.$emit('nimOnRobots',data.robots);
+                vm.$emit('nimOnRobots',window.nimData.robots);
             },
 
             //群组
             onteams(teams){//同步群列表的回调,会传入群数组teams
-                data.teams=nim.mergeTeams(data.teams,teams);
+                window.nimData.teams=nim.mergeTeams(window.nimData.teams,teams);
 
                 onInvalidTeams(teams.invalid);
                 function onInvalidTeams(teams){
-                    data.teams=nim.cutTeams(data.teams,teams);
-                    data.invalidTeams=nim.mergeTeams(data.invalidTeams,teams);
+                    window.nimData.teams=nim.cutTeams(window.nimData.teams,teams);
+                    window.nimData.invalidTeams=nim.mergeTeams(window.nimData.invalidTeams,teams);
                 };
 
-                vm.$emit('nimOnTeams',data.teams);
-                vm.$emit('nimOnTeamsAll',data.teams);
+                vm.$emit('nimOnTeams',window.nimData.teams);
+                vm.$emit('nimOnTeamsAll',window.nimData.teams);
             },
             onsynccreateteam(team){//当前登录用户在其它端创建群后的回调,会传入群对象
-                data.teams=nim.mergeTeams(data.teams,team);
+                window.nimData.teams=nim.mergeTeams(window.nimData.teams,team);
 
                 onTeamMembers({
                     teamId:team.teamId,
                     members:owner,
                 });
 
-                vm.$emit('nimOnCreateTeam',data.teams);
-                vm.$emit('nimOnTeamsAll',data.teams);
+                vm.$emit('nimOnCreateTeam',window.nimData.teams);
+                vm.$emit('nimOnTeamsAll',window.nimData.teams);
             },
             onUpdateTeam(team){//更新群的回调,此方法接收一个参数,更新后的群信息
                 vm.$emit('nimOnUpdateTeam',team);
@@ -262,8 +267,8 @@ const nimInit=(account,token)=>{
             onteammembers(obj){//同步群成员的回调,一个群对应一个回调,会传入群成员数组
                 onTeamMembers(obj);
 
-                vm.$emit('nimOnTeamMembers',data.teamMembers);
-                vm.$emit('nimOnTeamMembersAll',data.teamMembers);
+                vm.$emit('nimOnTeamMembers',window.nimData.teamMembers);
+                vm.$emit('nimOnTeamMembersAll',window.nimData.teamMembers);
             },
             onsyncteammembersdone(){//当syncTeams和syncTeamMembers同时为true时,会同步所有群的群成员,当所有群的群成员同步结束时,会调用此回调
                 vm.$emit('nimOnSyncTeamMembersDone');
@@ -274,8 +279,8 @@ const nimInit=(account,token)=>{
                     members:teamMember,
                 });
 
-                vm.$emit('nimOnUpdateTeamMember',data.teamMembers);
-                vm.$emit('nimOnTeamMembersAll',data.teamMembers);
+                vm.$emit('nimOnUpdateTeamMember',window.nimData.teamMembers);
+                vm.$emit('nimOnTeamMembersAll',window.nimData.teamMembers);
             },
 
             //群消息业务已读通知
@@ -285,10 +290,10 @@ const nimInit=(account,token)=>{
 
             //会话
             onsessions(sessions){//同步最近会话列表回调,会传入会话列表,按时间正序排列,即最近聊过天的放在列表的最后面。
-                data.sessions=nim.mergeSessions(data.sessions,sessions);
+                window.nimData.sessions=nim.mergeSessions(window.nimData.sessions,sessions);
 
-                vm.$emit('nimOnSessions',data.sessions);
-                vm.$emit('nimOnSessionsAll',data.sessions);
+                vm.$emit('nimOnSessions',window.nimData.sessions);
+                vm.$emit('nimOnSessionsAll',window.nimData.sessions);
             },
             onupdatesession(session){//更新会话的回调
                 /*
@@ -298,10 +303,10 @@ const nimInit=(account,token)=>{
                     设置当前会话
                     重置会话未读数
                 */
-                data.sessions=nim.mergeSessions(data.sessions,session);
+                window.nimData.sessions=nim.mergeSessions(window.nimData.sessions,session);
 
-                vm.$emit('nimOnUpdateSession',data.sessions);
-                vm.$emit('nimOnSessionsAll',data.sessions);
+                vm.$emit('nimOnUpdateSession',window.nimData.sessions);
+                vm.$emit('nimOnSessionsAll',window.nimData.sessions);
             },
 
             //消息
@@ -309,27 +314,27 @@ const nimInit=(account,token)=>{
                 pushMsg(obj.msgs);
 
                 vm.$emit('nimOnRoamingMsgs',obj.msgs);
-                vm.$emit('nimOnMsgAll',data.msgs);
+                vm.$emit('nimOnMsgAll',window.nimData.msgs);
             },
             onofflinemsgs(obj){//同步离线消息的回调,每个会话对应一个回调,会传入消息数组
                 pushMsg(obj.msgs);
 
                 vm.$emit('nimOnOfflineMsgs',obj.msgs);
-                vm.$emit('nimOnMsgAll',data.msgs);
+                vm.$emit('nimOnMsgAll',window.nimData.msgs);
             },
             onmsg(msg){//收到消息的回调,会传入消息对象
                 pushMsg(msg);
                 let lastMsgJson={};
 
-                for(let attr in data.msgs){
-                    lastMsgJson[attr]=data.msgs[attr][data.msgs[attr].length-1];
+                for(let attr in window.nimData.msgs){
+                    lastMsgJson[attr]=window.nimData.msgs[attr][window.nimData.msgs[attr].length-1];
                     if(lastMsgJson[attr].type=='custom'){
                         lastMsgJson[attr].content=JSON.parse(lastMsgJson[attr].content);
                     }
                 }
 
                 vm.$emit('nimOnMsg',lastMsgJson);
-                vm.$emit('nimOnMsgAll',data.msgs);
+                vm.$emit('nimOnMsgAll',window.nimData.msgs);
             },
 
             //系统通知
@@ -337,31 +342,31 @@ const nimInit=(account,token)=>{
                 pushSysMsgs(sysMsgs);
 
                 vm.$emit('nimOnOfflineSysMsgs',sysMsgs);
-                vm.$emit('nimOnSysMsgAll',data.sysMsgs);
+                vm.$emit('nimOnSysMsgAll',window.nimData.sysMsgs);
             },
             onsysmsg(sysMsgs){//收到系统通知的回调, 会传入系统通知
                 pushSysMsgs(sysMsgs);
 
-                vm.$emit('nimOnSysMsg',data.sysMsgs[data.sysMsgs.length-1]);
-                vm.$emit('nimOnSysMsgAll',data.sysMsgs);
+                vm.$emit('nimOnSysMsg',window.nimData.sysMsgs[window.nimData.sysMsgs.length-1]);
+                vm.$emit('nimOnSysMsgAll',window.nimData.sysMsgs);
             },
             onupdatesysmsg(sysMsg){//更新系统通知未读数的回调
                 pushSysMsgs(sysMsg);
 
-                vm.$emit('nimOnUpdateSysMsg',data.sysMsgs);
-                vm.$emit('nimOnSysMsgAll',data.sysMsgs);
+                vm.$emit('nimOnUpdateSysMsg',window.nimData.sysMsgs);
+                vm.$emit('nimOnSysMsgAll',window.nimData.sysMsgs);
             },
             onsysmsgunread(obj){//收到系统通知未读数的回调
-                data.sysMsgUnread=obj;
+                window.nimData.sysMsgUnread=obj;
 
-                vm.$emit('nimOnSysMsgUnread',data.sysMsgUnread);
-                vm.$emit('nimOnSysMsgUnreadAll',data.sysMsgUnread);
+                vm.$emit('nimOnSysMsgUnread',window.nimData.sysMsgUnread);
+                vm.$emit('nimOnSysMsgUnreadAll',window.nimData.sysMsgUnread);
             },
             onupdatesysmsgunread(obj){//更新系统通知未读数的回调
-                data.sysMsgUnread=obj;
+                window.nimData.sysMsgUnread=obj;
 
-                vm.$emit('nimOnUpdateSysMsgUnread',data.sysMsgUnread);
-                vm.$emit('nimOnSysMsgUnreadAll',data.sysMsgUnread);
+                vm.$emit('nimOnUpdateSysMsgUnread',window.nimData.sysMsgUnread);
+                vm.$emit('nimOnSysMsgUnreadAll',window.nimData.sysMsgUnread);
             },
             onofflinecustomsysmsgs(sysMsgs){//同步离线自定义系统通知的回调, 会传入系统通知数组
                 vm.$emit('nimOnOfflineCustomSysMsgs',sysMsgs);
@@ -381,7 +386,7 @@ const nimInit=(account,token)=>{
             //同步完成
             onsyncdone(){//当上面各个同步（不包括下面的同步群成员）完成后, 会调用此回调；注意, SDK保证在onsyncdone调用的时候上面的同步肯定完成了, 但是不保证各个同步回调的顺序。
                 vm.$emit('nimOnsyncdone');
-                console.log(data);
+                console.log(window.nimData);
             },
         });
     };

@@ -13,7 +13,13 @@
                         type="button"
                         @click="hangup"
                     >
-                        挂断
+                        拒绝
+                    </button>
+                    <button
+                        type="button"
+                        @click="response"
+                    >
+                        接听
                     </button>
                 </div>
             </div>
@@ -76,11 +82,19 @@
         },
 
         created(){
+            vm.$on('onconnect',this.netcallInit);
 
+            window.nimVideoCall=this;
+            window.showNimVideoCall=()=>{
+                this.controlNimVideoCall(true);
+            };
+            window.closeNimVideoCall=()=>{
+                this.controlNimVideoCall(false);
+            };
         },
 
         mounted(){
-            vm.$on('nimOnConnect',this.netcallInit);
+
         },
 
         updated(){
@@ -88,8 +102,8 @@
         },
 
         beforeDestroy(){
+            vm.$off('onconnect',this.netcallInit);
             clearTimeout(this.callTimer);
-            vm.$off('nimOnConnect',this.netcallInit);
         },
 
         methods:{
@@ -105,23 +119,26 @@
             resetWhenHangup(){
                 this.controlNimVideoCall(false);
 
-                // 停止本地视频预览
+                //停止本地视频预览
                 netcall.stopLocalStream();
 
-                // 停止对端视频预览
+                //停止对端视频预览
                 netcall.stopRemoteStream();
 
-                // 停止设备麦克风
+                //停止设备麦克风
                 netcall.stopDevice(Netcall.DEVICE_TYPE_AUDIO_IN);
 
-                // 停止设备摄像头
+                //停止设备摄像头
                 netcall.stopDevice(Netcall.DEVICE_TYPE_VIDEO);
 
-                // 停止播放本地音频
+                //停止播放本地音频
                 netcall.stopDevice(Netcall.DEVICE_TYPE_AUDIO_OUT_LOCAL);
 
-                // 停止播放对端音频
+                //停止播放对端音频
                 netcall.stopDevice(Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT);
+
+                //停止信令通道
+                netcall.stopSignal();
             },
             netcallInit(endFn){
                 nimNetcallInit(0,this.$refs.container,this.$refs.remoteContainer);
@@ -141,20 +158,13 @@
                 //信令通道初始化失败的时候, 请展示错误并禁用所有音视频通话相关的 UI
                 netcall.initSignal().then(()=>{
                     this.signalInited=true;
-                    window.nimVideoCall=this;
-                    window.showNimVideoCall=()=>{
-                        this.controlNimVideoCall(true);
-                    };
-                    window.closeNimVideoCall=()=>{
-                        this.controlNimVideoCall(false);
-                    };
 
                     if(Type(endFn)=='function'){
                         endFn();
                     }
                 }).catch((err)=>{
-                    this.signalInited=false;
                     console.log(err);
+                    this.signalInited=false;
                 });
 
                 //当信令通道断开时, 会触发 signalClosed 事件
@@ -186,6 +196,7 @@
                         this.netcallInfo.type=obj.type;
                         this.netcallInfo.beCalling=true;
                         this.netcallInfo.beCalledInfo=obj;
+                        this.controlNimVideoCall(true);
                     }else{
                         if(netcall.calling){
                             this.netcallInfo.busy=netcall.notCurrentChannelId(obj);
@@ -232,6 +243,7 @@
                     this.videoLink();
                 });
 
+                //收到挂断通知
                 netcall.off('hangup');
                 netcall.on('hangup',(obj)=>{
                     let {beCalledInfo}=this.netcallInfo;
@@ -240,6 +252,23 @@
                     if(!beCalledInfo||beCalledInfo.channelId===obj.channelId){
                         // 清理工作
                         this.resetWhenHangup();
+                    }
+                });
+
+                //其他端已处理的通知
+                netcall.on('callerAckSync', function(obj) {
+                    console.log('其他端已经做了处理', obj);
+                });
+
+                //sdk内部消息通知
+                netcall.on('error',function(obj){
+                    console.log('sdk反馈错误信息',obj);
+                    if(obj.code){
+                        if(obj.code==509){
+                            console.warn('你被提出房间了');
+                        }else if(obj.code==500){
+                            console.warn('你的web不支持H264视频编码，无法进行呼叫，请检测浏览器的H264插件是否正常');
+                        }
                     }
                 });
             },
@@ -297,8 +326,8 @@
 
                 //设置本地视频画面大小
                 netcall.setVideoViewSize({
-                    width: 100,
-                    height: 100,
+                    width:100,
+                    height:100,
                     cut: true,
                 });
 
@@ -315,8 +344,7 @@
             call(){
                 let {scene,to}=this.nimChat;
                 let {pushConfig,sessionConfig}=this;
-
-                this.netcallInit(()=>{
+                const netcallCall=()=>{
                     netcall.call({
                         type: Netcall.NETCALL_TYPE_VIDEO,
                         account: to,
@@ -325,21 +353,29 @@
                         webrtcEnable: true
                     }).then(function(obj){
                         //成功发起呼叫
+                        vm.$emit('nimVideoCallSuccess',obj);
                         console.log('call success', obj);
                     }).catch(function(err){
                         console.log(err);
                         //被叫不在线
+                        vm.$emit('nimVideoCallFail',err);
                         if(err.event&&err.event.code === 11001){
                             console.log('callee offline', err);
+                            vm.$emit('nimVideoCallcalleeOffline',err);
                         }
                     });
 
                     //设置超时计时器
-                    this.callTimer=setTimeout(function() {
-                      if (!netcall.callAccepted) {
-                        this.hangup();
-                      }
-                    },1000*30);
+                    clearTimeout(this.callTimer);
+                    this.callTimer=setTimeout(()=>{
+                        if(!netcall.callAccepted){
+                            this.hangup();
+                        }
+                    },1000*5);
+                };
+
+                this.netcallInit(()=>{
+                    netcallCall();
                 });
             },
             response(){

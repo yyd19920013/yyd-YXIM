@@ -5,18 +5,7 @@ import vm from 'src/main';
 import {lStore} from 'js/yydjs';
 
 const nimNetcallInit=(type,container,remoteContainer)=>{
-    reconnection();
-    function reconnection(){
-        if(window.netcall){
-            window.netcall.destroy({
-                done:function(err){
-                    window.netcall=nimNetcallInitFn(type,container,remoteContainer);
-                }
-            });
-        }else{
-            window.netcall=nimNetcallInitFn(type,container,remoteContainer);
-        }
-    };
+    window.netcall=nimNetcallInitFn(type,container,remoteContainer);
 
     function nimNetcallInitFn(type,container,remoteContainer){
         if(type==0){

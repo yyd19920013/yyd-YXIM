@@ -69,6 +69,9 @@
                                     controls
                                 ></video>
                             </div>
+                            <div v-if="item.attach">
+                                {{netcallMsgJson[item.attach.type]}}
+                            </div>
                         </div>
                     </div>
                 </li>
@@ -134,6 +137,12 @@
                 </button>
                 <button
                     type="button"
+                    @click="hangup"
+                >
+                    拒绝
+                </button>
+                <button
+                    type="button"
                     @click="response"
                 >
                     接听
@@ -156,6 +165,11 @@
                 msg:'',
                 dateFormat0,
                 lStore,
+                netcallMsgJson:{
+                    netcallBill:'通话已结束',
+                    netcallRejected:'呼叫被拒绝',
+                    cancelNetcallBeforeAccept:'通话已取消',
+                },
             }
         },
 
@@ -174,6 +188,7 @@
         created(){
             vm.$on('nimOnConnect',this.getHistoryMsgs);
             vm.$on('nimOnMsg',this.getMsgs);
+            vm.$on('nimVideoCallSuccess',this.nimVideoCallSuccess);
         },
 
         mounted(){
@@ -183,9 +198,13 @@
         beforeDestroy(){
             vm.$off('nimOnConnect',this.getHistoryMsgs);
             vm.$off('nimOnMsg',this.getMsgs);
+            vm.$off('nimVideoCallSuccess',this.nimVideoCallSuccess);
         },
 
         methods:{
+            nimVideoCallSuccess(obj){
+                window.showNimVideoCall(true);
+            },
             call(){
                 console.log(window.nimVideoCall);
                 if(window.nimVideoCall){
@@ -193,8 +212,15 @@
                 }
             },
             response(){
+                console.log(window.nimVideoCall);
                 if(window.nimVideoCall){
                     window.nimVideoCall.response();
+                }
+            },
+            hangup(){
+                console.log(window.nimVideoCall);
+                if(window.nimVideoCall){
+                    window.nimVideoCall.hangup();
                 }
             },
             scrollBottom(){
@@ -232,6 +258,7 @@
                 });
             },
             getMsgs(res){
+                console.log(res);
                 let msgArr=[];
                 let {scene,to}=this.nimChat;
 
@@ -266,7 +293,7 @@
                 nim.sendCustomMsg({
                     scene,
                     to,
-                    content: JSON.stringify({
+                    content:JSON.stringify({
                         type:'order',
                         title:'药品订单',
                         main:'这是一条自定义消息',

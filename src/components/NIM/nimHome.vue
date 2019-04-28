@@ -17,7 +17,7 @@
         <div
             class="nimMessageListWrap wrapContainer"
             ref="nimMessageListWrap"
-            v-if="pageControl.nimMessageList"
+            v-show="pageControl.nimMessageList"
         >
             <nimMessageList
                 :parent="this"
@@ -27,7 +27,7 @@
         <div
             class="nimAddressListWrap wrapContainer"
             ref="nimAddressListWrap"
-            v-if="pageControl.nimAddressList"
+            v-show="pageControl.nimAddressList"
         >
             <nimAddressList
                 :parent="this"
@@ -37,7 +37,7 @@
         <div
             class="nimChatWrap wrapContainer"
             ref="nimChatWrap"
-            v-if="pageControl.nimChat"
+            v-show="pageControl.nimChat"
         >
             <nimChat
                 :parent="this"
@@ -47,7 +47,7 @@
         <div
             class="nimSearchFriendWrap wrapContainer"
             ref="nimSearchFriendWrap"
-            v-if="pageControl.nimSearchFriend"
+            v-show="pageControl.nimSearchFriend"
         >
             <nimSearchFriend
                 :parent="this"
@@ -57,9 +57,19 @@
         <div
             class="nimCreateTeamWrap wrapContainer"
             ref="nimCreateTeamWrap"
-            v-if="pageControl.nimCreateTeam"
+            v-show="pageControl.nimCreateTeam"
         >
             <nimCreateTeam
+                :parent="this"
+            />
+        </div>
+
+        <div
+            class="nimLoginWrap wrapContainer"
+            ref="nimLoginWrap"
+            v-show="pageControl.nimLogin"
+        >
+            <nimLogin
                 :parent="this"
             />
         </div>
@@ -67,16 +77,6 @@
         <nimVideoCall
             :parent="this"
         />
-
-        <div
-            class="nimLoginWrap wrapContainer"
-            ref="nimLoginWrap"
-            v-if="pageControl.nimLogin"
-        >
-            <nimLogin
-                :parent="this"
-            />
-        </div>
     </div>
 </template>
 
@@ -152,26 +152,19 @@
             controlPage(controlName,refName,show){
                 this.pageControl[controlName]=show;
 
-                setTimeout(()=>{
-                    let oPage=this.$refs[refName];
+                let oPage=this.$refs[refName];
 
-                    if(oPage&&show){
-                        this.zIndex++;
-                        oPage.style.zIndex=this.zIndex;
-                    }
-                    if(lStore.get('account')&&lStore.get('token')){
-                        nimInit();
-                    }
-                },300);
+                if(oPage&&show){
+                    this.zIndex++;
+                    oPage.style.zIndex=this.zIndex;
+                }
             },
             judgeLogin(){
                 if(!lStore.get('account')||!lStore.get('token')){
                     alert('请先登录');
                     this.controlPage('nimLogin','nimLoginWrap',true);
                 }else{
-                    setTimeout(()=>{
-                        nimInit();
-                    },300);
+                    nimInit();
                 }
             },
             tabControl(index){
