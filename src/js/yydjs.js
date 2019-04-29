@@ -1,13 +1,8 @@
 // JavaScript Document
-import $ from 'jquery';
 import Decimal from 'yyd-decimal';
 import axios from 'axios';
+import postcssrc from 'root/.postcssrc';
 import CONFIG from 'config';
-
-// JavaScript Document
-
-//防止网页被iframe嵌套
-//if(window.top!=window.self)window.top.location=window.self.location;
 
 //工具函数-->
 //原生常用方法封装
@@ -87,20 +82,13 @@ function consoleNull(arr){
 //whiteList（允许调试的域名列表，例子如下：）
 //openMoblieDebug(['ih.dev.aijk.net','ih2.test.aijk.net']);
 function openMoblieDebug(whiteList){
+    var whiteList=whiteList||[];
     var hostname=window.location.hostname;
+    var open=hostname=='localhost'||hostname=='127.0.0.1'||hostname=='172.16.21.92'||~whiteList.indexOf(hostname);
     var count=0;
-    var onOff=false;
-
-    for(var i=0;i<whiteList.length;i++){
-        if(hostname==whiteList[i]){
-            onOff=true;
-            break;
-        }
-    }
 
     function openFn(){
         var oErudaScript=document.getElementById('//cdn.jsdelivr.net/npm/eruda');
-        var open=(hostname=='localhost'||hostname=='127.0.0.1'||hostname=='172.16.21.99'||onOff);
 
         if(!oErudaScript&&open){
             var oScript=document.createElement('script');
@@ -131,8 +119,10 @@ function openMoblieDebug(whiteList){
         }
     };
 
-    unbind(document,'click',openJudgeFn);
-    bind(document,'click',openJudgeFn);
+    if(open){
+        unbind(document,'click',openJudgeFn);
+        bind(document,'click',openJudgeFn);
+    }
 };
 
 //判断数据类型的方法（对typeof的增强，7种常用类型的判断，返回小写字符串）
@@ -202,23 +192,13 @@ function unbind(obj,evname,fn){
 
 //网络处理
 function networkHandle(onlineFn,offlineFn){
-    var oMask=document.createElement('div');
-    var oWrap=document.createElement('div');
-    var textArr=['当前无网络连接！','网络连接已恢复！'];
-
-    oMask.style.cssText='width:100%; height:100%; background-color:rgba(0,0,0,0.6); position:fixed; left:0; top:0; z-index:999999999;';
-    oWrap.style.cssText='width:200px; height:50px; line-height:50px; text-align:center; border-radius:5px; background-color:#fff; font-size:16px; position:absolute; left:0; top:0; right:0; bottom:0; margin:auto; z-index:10;';
-    oMask.appendChild(oWrap);
-
     window.onoffline=function(){
-        oWrap.innerHTML=textArr[0];
-        document.body.appendChild(oMask);
+        alerts('网络已断开！');
         offlineFn&&offlineFn();
     };
     window.ononline=function(){
-        oWrap.innerHTML=textArr[1];
+        alerts('网络已连接！');
         setTimeout(function(){
-            document.body.removeChild(oMask);
             webviewRefresh();
         },3000);
         onlineFn&&onlineFn();
@@ -532,10 +512,218 @@ function layoutChange(obj){
     }
 };
 
+//execCommand对文档执行预定义命令
+//aCommandName表示要执行的命令名称，不可省略
+//aShowDefaultUI表示是否显示对话框，默认为false，可省略
+//aValueArgument表示额外参数值，默认为null，可省略
+function execCommandFn(key,value){
+    var commandJson={
+        //段落格式
+        '1_1':'justifyCenter',//居中
+        '1_2':'justifyLeft',//左对齐
+        '1_3':'justifyRight',//右对齐
+        '1_4':'indent',//添加缩进
+        '1_5':'outdent',//去掉缩进
+        //文本格式
+        '2_1':'fontname',//字体类型
+        '2_2':'fontsize',//字体大小
+        '2_3':'forecolor',//字体颜色
+        '2_4':'backColor',//背景色
+        '2_5':'bold',//加粗
+        '2_6':'italic',//斜体
+        '2_7':'underline',//下划线
+        //编辑
+        '3_1':'copy',//复制
+        '3_2':'cut',//剪切
+        '3_3':'paste',//粘贴(经测试无效)
+        '3_4':'selectAll',//全选
+        '3_5':'delete',//删除
+        '3_6':'forwarddelete',//后删除
+        '3_7':'removeFormat',//清空格式
+        '3_8':'redo',//前进一步
+        '3_9':'undo',//后退一步
+        '3_10':'print',//打印(对firefox无效)
+        //插入
+        '4_1':'insertHTML',//插入文档
+        '4_2':'formatblock',//插入标签
+        '4_3':'inserthorizontalrule',//插入<hr>
+        '4_4':'insertorderedlist',//插入<ol>
+        '4_5':'insertunorderedlist',//插入<ul>
+        '4_6':'insertparagraph',//插入<p>
+        '4_7':'insertimage',//插入图像
+        '4_8':'createlink',//增加链接
+        '4_9':'unlink',//删除链接
+    };
+    var aCommandName=commandJson[key];
+    var aShowDefaultUI=false;
+    var aValueArgument=value;
+
+    document.execCommand(aCommandName,aShowDefaultUI,aValueArgument);
+};
+
 //选中文字兼容
-function selectText(){
-    return  document.selection? document.selection.createRange().text //ie下
-                                :window.getSelection().toString(); //标准下
+function selectText(endFn){
+    var selectedObj=null;
+    var rangeObj=null;
+    var text='';
+    var html='';
+
+    if(document.getSelection){
+        var oDiv=document.createElement('div');
+        var cloneContents='';
+
+        selectedObj=document.getSelection();//标准
+        text=selectedObj.toString();
+        if(selectedObj.rangeCount>0){
+            rangeObj=selectedObj.getRangeAt(0);
+            cloneContents=rangeObj.cloneContents();
+            oDiv.appendChild(cloneContents);
+            html=oDiv.innerHTML;
+        }
+    }else{
+        selectedObj=document.selection.createRange();//ie
+        text=selectedObj.text;
+        html=selectedObj.htmlText;
+    }
+
+    endFn&&endFn({
+        selectedObj:selectedObj,//Selection对象
+        rangeObj:rangeObj,//range对象
+        text:text,//选中的文字
+        html:html,//选中的html
+        wrapTag:function(tagName,insert,objStyle,objProperty,objAttribute){//给选中的内容包裹一个标签（并选中）
+            var tagName=tagName||'span';
+            var objStyle=objStyle||{};
+            var objProperty=objProperty||{};
+            var objAttribute=objAttribute||{};
+            var oRange=selectedObj.rangeCount>0?selectedObj.getRangeAt(0):'';
+            var oTag=document.createElement(tagName);
+
+            for(var attr in objStyle){
+                oTag.style[attr]=objStyle[attr];
+            }
+            if(objStyle['text-align']){
+                oTag.style.display='block';
+            }else if(oTag.style.display=='block'){
+                oTag.style.display='unset';
+            }
+
+            for(var attr in objProperty){
+                oTag[attr]=objProperty[attr];
+            }
+            for(var attr in objAttribute){
+                oTag.setAttribute(attr,objAttribute[attr]);
+            }
+
+            execCommandFn('3_7');
+
+            if(!insert&&oRange&&text){
+                oTag.innerText=text;
+                selectedObj.deleteFromDocument();
+                oRange.insertNode(oTag);
+                selectedObj.removeAllRanges();
+                selectedObj.addRange(oRange);
+            }else{
+                var oContentediable=QSA('[contenteditable="true"]')[0];
+                var oDiv=document.createElement('div');
+
+                oContentediable.focus();
+                oDiv.appendChild(oTag);
+                execCommandFn('4_1',oDiv.innerHTML);
+            }
+        },
+        getNodeList:function(parent){//获取选中的文本类型的node
+            if(!parent)return [];
+            var nodeList=[];
+
+            function getNodeListFn(parent){
+                if(!parent.childNodes.length)return;
+                var childNodes=parent.childNodes;
+
+                for(var i=0;i<childNodes.length;i++){
+                    var isContains=selectedObj.containsNode(childNodes[i])&&childNodes[i].data;
+
+                    if(isContains){
+                        nodeList.push(childNodes[i]);
+                    }else{
+                        getNodeListFn(childNodes[i]);
+                    }
+                }
+            };
+            getNodeListFn(parent);
+
+            return nodeList;
+        },
+        getCssText:function(parent){//获取元素以及所有后代的cssText并解析成json
+            if(!parent)return {};
+            var result={};
+
+            function getCssTextFn(parent){
+                if((!parent.childNodes||!parent.childNodes.length)&&(!parent.style||!parent.style.cssText))return;
+                var cssText=parent.style.cssText;
+                var reg=/(:\s")+/g;
+                var reg1=/(";\s)+/g;
+                var reg2=/(:\s)+/g;
+                var reg3=/(;\s)+/g;
+
+                try{
+                    if(cssText.length){
+                        cssText=cssText.replace(reg,': ');
+                        cssText=cssText.replace(reg1,'; ');
+                        cssText=cssText.replace(reg2,'":"');
+                        cssText=cssText.replace(reg3,'","');
+                        cssText=cssText.substring(0,cssText.length-1);
+                        cssText='{"'+cssText;
+                        cssText=cssText+'"}';
+                        cssText=JSON.parse(cssText);
+                    }
+                }catch(e){}
+
+                result=Object.assign({},result,cssText||{});
+                for(var i=0;i<parent.childNodes.length;i++){
+                   getCssTextFn(parent.childNodes[i]);
+                }
+            };
+            getCssTextFn(parent);
+
+            return result;
+        },
+    });
+    return text;
+};
+
+//图片文件转base64字符串
+function imgFilesToBase64(files,endFn){
+    var files=files||[];
+    var result=[];
+
+    function imgToBase64(file){
+        var oReader=new FileReader(file);
+
+        oReader.readAsDataURL(file);
+        oReader.onload=function(){
+            var oImg=new Image();
+
+            oImg.src=oReader.result;
+            oImg.onload=function(){
+                var windowUrl=window.URL||window.webkitURL;
+
+                result.push({
+                    file:file,
+                    prevSrc:windowUrl.createObjectURL(file),
+                    base64:oReader.result,
+                });
+
+                if(result.length==files.length){
+                    endFn&&endFn(result);
+                }
+            };
+        };
+    };
+
+    for(var i=0;i<files.length;i++){
+        imgToBase64(files[i]);
+    }
 };
 
 //重置file文件
@@ -633,17 +821,20 @@ function isSafari(){
     return window.navigator.userAgent.match(reg)?true:false;
 };
 
+//cookie操作
 var cookie={
-    set:function(key,value,mesc){//设置cookie
+    set:function(key,value,sec){
+        var sec=sec||60*60*24*30;
         var oDate=new Date();
 
-        oDate.setSeconds(oDate.getSeconds()+(mesc||60*60*24*30));//不传过期秒数默认30天过期
+        oDate.setSeconds(oDate.getSeconds()+sec);
+        oDate=oDate.toGMTString();
         document.cookie=key+'='+encodeURIComponent(value)+';expires='+oDate;
     },
     get:function(key){//获取cookie
         var str=document.cookie;
         var reg1=/\=+/g;
-        var reg2=/\;+/g;
+        var reg2=/(\;|[\;\s])+/g;
 
         try{
             str=str.replace(reg1,'":"');
@@ -652,16 +843,18 @@ var cookie={
             str+='"}';
             str=JSON.parse(str);
         }catch(e){}
-        return decodeURIComponent(str[key]);
+        return str[key]?decodeURIComponent(str[key]):str[key];
     },
     remove:function(key){//删除cookie
         var oDate=new Date();
 
         oDate.setDate(oDate.getDate()-1);
-        document.cookie=key+'='+''+';expires='+oDate.toGMTString();
+        oDate=oDate.toGMTString();
+        document.cookie=key+'='+''+';expires='+oDate;
     },
 };
 
+//创建Store对象
 var Store=function(){
     this.name='Store';
 };
@@ -715,10 +908,12 @@ Store.prototype={
     },
 };
 
+//localStorage操作
 var lStore=new Store().init({
     'type':window.localStorage,
 });
 
+//sessionStorage操作
 var sStore=new Store().init({
     'type':window.sessionStorage,
 });
@@ -833,8 +1028,8 @@ function getSearch(key,str){
 };
 
 //json克隆副本
-function Json(json){
-    return json?JSON.parse(JSON.stringify(json)):'';
+function copyJson(json){
+    return json?JSON.parse(JSON.stringify(json)):json;
 };
 
 //判断设备跳转不同地址
@@ -844,18 +1039,38 @@ function goPage(moHref,pcHref){
     window.location.href=navigator.userAgent.match(reg)?moHref:pcHref;
 };
 
-//根据设备宽度来写相对布局,
-//最小1rem=100px(宽度为375px屏幕下),3.75rem=100%;
-//根据375屏幕下换算来布局
-//小于375屏幕根节点字体大小与375屏幕保持一致，注意宽度的溢出
-function htmlFontSize(getFontSize){
-    function change(){
-        var fontSize=document.documentElement.clientWidth/3.75;
+//根据屏幕大小设置根节点字体大小
+//getFontSize（是否返回根节点fontSize大小）
+//basic（基准值）
+//maxScale（最大缩放比例）
+/*
+    最好结合postcss-pxtorem插件自动转换px为rem
 
-        if(fontSize<100)fontSize=100;
-        if(fontSize>208)fontSize=208;
+    安装：
+    npm i postcss-pxtorem -D
+
+    修改根目录 .postcssrc.js 文件：
+    注意：rootValue和basic（基准值）保持一致
+    "postcss-pxtorem": {
+        "rootValue": 100,
+        "minPixelValue": 2, //如px小于这个值，就不会转换了
+        "propList": ["*"], // 如需开启pxToRem模式，请在数组中加入"*"
+        "selectorBlackList": [] //如需把css选择器加入黑名单，请在数组中加入对应的前缀，比如"mint-"
+    }
+*/
+function htmlFontSize(getFontSize,basic,maxScale){
+    var getFontSize=getFontSize||false;
+    var basic=basic||100;
+    var maxScale=maxScale||1.5;
+
+    function change(){
+        var oHtml=document.documentElement;
+        var iWidth=oHtml.clientWidth;
+        var iScale=Math.min(iWidth/375,maxScale);
+        var fontSize=basic*iScale;
+
         if(!getFontSize){
-            document.getElementsByTagName('html')[0].style.fontSize=fontSize+'px';
+            oHtml.style.fontSize=fontSize+'px';
         }else{
             return fontSize;
         }
@@ -867,6 +1082,23 @@ function htmlFontSize(getFontSize){
     }else{
         return change();
     }
+};
+
+//转换单位为rem
+//需要引入import postcssrc from 'root/.postcssrc';
+function unit(num,basic){
+    var length=0;
+
+    if(postcssrc){
+        length=postcssrc.plugins['postcss-pxtorem'].propList.length;
+    }
+
+    if(num==0)return 0;
+    if(length==0)return num+'px';
+    var basic=basic||100;
+    var value=num/basic;
+
+    return (value<0.01?0.01:value)+'rem';
 };
 
 
@@ -2898,38 +3130,82 @@ function preload(arr,endFn){
     }
 };
 
-//ajax
-//ajax({//示例
-//  url:'',
-//  type:'post',
-//  data:'',
-//  closeToForm:false,
-//  dataType:'json',
-//  headers:{},
-//  xhr:function(xhr){
-//      console.log(xhr);
-//  },
-//  progress:function(ev){
-//      console.log(ev);
-//  },
-//  success:function(data){
-//      console.log(data);
-//  },
-//  error:function(data){
-//      console.log(data);
-//  },
-//});
-function ajax(json){
+//ajax包装
+//支持回调函数和promise两种风格
+/*
+    参数：
+    ajaxWrap({
+        url:'',//请求地址
+        type:'post',//请求方法
+        data:'',//请求传参
+        contentType:'',//设置请求头contentType
+        closeToForm:false,//关闭json转form格式
+        dataType:'json',//返回数据类型
+        headers:{},//请求头设置
+        getXhr:function(xhr){//获取xhr对象的函数
+            console.log(xhr);
+        },
+        progress:function(ev){//上传文件时触发的函数
+            console.log(ev);
+        },
+        success:function(res){//请求状态成功且code成功的回调
+            console.log(res);
+        },
+        finally:function(data){//请求状态成功的回调，promise模式在catch里捕获
+            console.log(data);
+        },
+        error:function(error){//请求状态错误的回调
+            console.log(error);
+        },
+    });
+*/
+/*
+    例子：
+    回调函数风格：
+    ajaxWrap({
+        code:0,
+        url:'https://www.muyouche.com/action2/HomePageInfo.ashx',
+        type:'post',
+        success:function(res){
+            console.log(res);
+        },
+    });
+
+    promise风格：
+    ajaxWrap({
+        code:0,
+        url:'https://www.muyouche.com/action2/HomePageInfo.ashx',
+        type:'post',
+    }).then((res)=>{
+        console.log(res);
+    });
+*/
+function ajaxWrap(config){
     var str='';
+    var errorPromise={
+        then:function(){
+            console.error('这是一个无效的then函数，如果要使用promise方式，不要在config对象里配置success、error、finally函数');
+            return this;
+        },
+        catch:function(){
+            console.error('这是一个无效的catch函数，如果要使用promise方式，不要在config对象里配置success、error、finally函数');
+            return this;
+        },
+        finally:function(){
+            console.error('这是一个无效的finally函数，如果要使用promise方式，不要在config对象里配置success、error、finally函数');
+            return this;
+        },
+    };
 
-    json.type=json.type.toLowerCase()||'get';
-    json.dataType=json.dataType.toLowerCase()||'json';
+    config.type=config.type?config.type.toLowerCase():'get';
+    config.dataType=config.dataType?config.dataType.toLowerCase():'json';
+    config.code=config.code||config.code==0?config.code:200;
 
-    if(!json.closeToForm&&json.data&&Type(json.data)=='object'){
-        for(var attr in json.data){
-            str+=attr+'='+json.data[attr]+'&';
+    if(!config.closeToForm&&config.data&&Type(config.data)=='object'){
+        for(var attr in config.data){
+            str+=attr+'='+config.data[attr]+'&';
         }
-        json.data=str.substring(0,str.length-1);
+        config.data=str.substring(0,str.length-1);
     }
 
     var xhr=null;
@@ -2937,43 +3213,42 @@ function ajax(json){
     try{
         xhr=new XMLHttpRequest();
     }catch(e){
-        xhr=new window.ActiveXObject('Microsoft.XMLHTTP');
+        xhr=new ActiveXObject('Microsoft.XMLHTTP');
     }
 
-    if(json.xhr&&Type(json.xhr)=='function'){
-        xhr=json.xhr(xhr);
+    if(config.getXhr&&Type(config.getXhr)=='function'){
+        xhr=config.getXhr(xhr);
     }
 
-    if(xhr.upload&&json.progress&&Type(json.progress)=='function'){
-        bind(xhr.upload,'progress',json.progress);
+    if(xhr.upload&&config.progress&&Type(config.progress)=='function'){
+        bind(xhr.upload,'progress',config.progress);
     }
 
-    if(json.type=='get'&&json.data){
-        json.url+='?'+json.data;
+    if(config.type=='get'&&config.data){
+        config.url+='?'+config.data;
     }
 
-    xhr.open(json.type,json.url,true);
+    xhr.open(config.type,config.url,true);
 
-    if(json.type=='get'){
+    if(config.type=='get'){
         xhr.send();
     }else{
-        if(!json.closeToForm)xhr.setRequestHeader('content-type','application/x-www-form-urlencoded');
-        if(json.headers&&Type(json.headers)=='object'){
-            for(var attr in json.headers){
-                xhr.setRequestHeader(attr,json.headers[attr]);
+        if(!config.closeToForm)xhr.setRequestHeader('content-type','application/x-www-form-urlencoded');
+        if(config.headers&&Type(config.headers)=='object'){
+            for(var attr in config.headers){
+                xhr.setRequestHeader(attr,config.headers[attr]);
             }
         }
-        xhr.send(json.data);
+        xhr.send(config.data);
     }
 
-    json.before&&Type(json.before)=='function'&&json.before(xhr);
-    xhr.onreadystatechange=function(){
+    function onreadystatechangeFn(resolve,reject){
         var data=null;
 
         if(xhr.readyState==4){
             if(xhr.status==200){
                 try{
-                    switch(json.dataType){
+                    switch(config.dataType){
                         case 'text':
                                 data=xhr.responseText;
                             break;
@@ -2996,17 +3271,52 @@ function ajax(json){
                                 data=oScript;
                             break;
                     }
-
                 }catch(e){
                     console.log(e);
                 }
-                json.after&&Type(json.after)=='function'&&json.after(xhr,data);
-                json.success&&Type(json.success)=='function'&&json.success(data);
+
+                config.finally&&config.finally(data);
+                if(data.code==config.code){
+                    if(resolve&&(Type(resolve)=='function')){
+                        return resolve(data);
+                    }else{
+                        config.success&&config.success(data);
+                    }
+                }else{
+                    if(!config.noHint){
+                        if(data.msg){
+                            alerts(data.msg);
+                        }else{
+                            alerts('请求代码错误');
+                        }
+                    }
+
+                    if(reject&&(Type(reject)=='function')){
+                        return reject(data);
+                    }
+                }
             }else{
-                json.error&&Type(json.error)=='function'&&json.error(xhr.status);
+                alerts('网络异常'+xhr.status);
+                if(reject&&(Type(reject)=='function')){
+                    return reject(xhr.status);
+                }else{
+                    config.error&&config.error(xhr.status);
+                }
             }
         }
     };
+
+    if(config.success||config.finally||config.error){
+        xhr.onreadystatechange=onreadystatechangeFn;
+
+        return errorPromise;
+    }else{
+        return new Promise(function(resolve,reject){
+            xhr.onreadystatechange=function(){
+                onreadystatechangeFn(resolve,reject);
+            };
+        });
+    }
 };
 
 //传入日期和当前日期的差
@@ -3096,14 +3406,15 @@ function reactSelect(This,key,ev){
 
 
 //金额格式化
-function getDecimal(value){
+function amountFormat0(value,dLength,cLength){
     var oldValue=value;
     var value=+value;
     var arr=[];
-    var length=length||2;
+    var dLength=dLength||2;
+    var cLength=cLength||3;
     var zero='';
 
-    for(var i=0;i<length;i++){
+    for(var i=0;i<dLength;i++){
         zero+='0';
     }
 
@@ -3112,11 +3423,11 @@ function getDecimal(value){
         value=value.split('.');
         value[0]=value[0].split('');
         value[1]=(value[1]||'')+zero;
-        value[1]=value[1].substring(0,length);
+        value[1]=value[1].substring(0,dLength);
 
         arr.unshift('.',value[1]);
-        while(value[0].length>3){
-            arr.unshift(',',value[0].splice(value[0].length-3,3).join(''));
+        while(value[0].length>cLength){
+            arr.unshift(',',value[0].splice(value[0].length-cLength,cLength).join(''));
         }
 
         arr=value[0].join('')+arr.join('');
@@ -3151,6 +3462,17 @@ function limitLength(value,length){
 //短日期格式化
 function shortDate(value){
     return dateFormat0(value,'MM-dd hh:mm:ss');
+};
+
+//重置file文件
+//obj(file文件对象)
+function resetFile(obj){
+    var oFrom=document.createElement('form');
+    var oParent=obj.parentNode;
+
+    oFrom.appendChild(obj);
+    oFrom.reset();
+    oParent.appendChild(obj);
 };
 
 //路由切换回到顶部防闪屏（用于单页应用）
@@ -3205,34 +3527,118 @@ function computed(num1,operator,num2){
 };
 
 //axios包装
-//success（状态200执行回调函数）
-//error（状态不为200的回调函数）
-//finally（不管状态为什么都走的回调函数）
-//all（多个axios请求，也可以使用axios.all）
+//支持回调函数和promise两种风格
 /*
+    参数：
+    axiosWrap({
+        url:'',//请求地址
+        method:'post',//请求方法
+        params:'',//请求传参
+        responseType:'json',//返回数据类型
+        headers:{},//请求头设置
+        timeout:20000,//请求超时设置
+        onUploadProgress:function(ev){//上传文件时触发的函数
+            console.log(ev);
+        },
+        onDownloadProgress:function(ev){//下载文件时触发的函数
+            console.log(ev);
+        },
+        success:function(res){//请求状态成功且code成功的回调
+            console.log(res);
+        },
+        finally:function(data){//请求状态成功的回调，promise模式在catch里捕获
+            console.log(data);
+        },
+        error:function(error){//请求状态错误的回调
+            console.log(error);
+        },
+    });
+*/
+/*
+    例子：
+    单个请求：
+    回调函数风格：
+    axiosWrap({
+        code:0,
+        url:'https://www.muyouche.com/action2/HomePageInfo.ashx',
+        method:'post',
+        success(res){
+            console.log(res);
+        },
+    });
+
+    promise风格：
+    axiosWrap({
+        code:0,
+        url:'https://www.muyouche.com/action2/HomePageInfo.ashx',
+        method:'post',
+    }).then((res)=>{
+        console.log(res);
+    });
+
+
+    并发请求：
+    回调函数风格：
     axiosWrap({
         all:{
             apis:[//所有api配置
                 {
-                    url:'/action2/HomePageInfo.ashx',
+                    code:0,
+                    url:'https://www.muyouche.com/action2/HomePageInfo.ashx',
+                    method:'post',
                 },
                 {
-                    url:'/action2/CarBrand.ashx',
+                    code:0,
+                    url:'https://www.muyouche.com/action2/CarBrand.ashx',
+                    method:'post',
                 },
             ],
-            success(res1,res2){//都成功回调
-                console.log(res1,res2);
-            },
-            fail(statusArr,codeArr){//失败的状态和code数组
-                console.log(statusArr,codeArr);
+            success(resArr){//都成功回调
+                console.log(resArr);
             },
         },
     });
+
+    promise风格：
+    axiosWrap({
+        all:{
+            apis:[//所有api配置
+                {
+                    code:0,
+                    url:'https://www.muyouche.com/action2/HomePageInfo.ashx',
+                    method:'post',
+                },
+                {
+                    code:0,
+                    url:'https://www.muyouche.com/action2/CarBrand.ashx',
+                    method:'post',
+                },
+            ],
+        },
+    }).then((resArr)=>{
+        console.log(resArr);
+    });
 */
-function axiosWrap(option){
-    var option=option||{};
+function axiosWrap(config){
+    var config=config||{};
     var hostname=window.location.hostname;
-    var all=option.all;
+    var all=config.all;
+    var errorPromise={
+        then:function(){
+            console.error('这是一个无效的then函数，如果要使用promise方式，不要在config对象里配置success、error、finally函数');
+            return this;
+        },
+        catch:function(){
+            console.error('这是一个无效的catch函数，如果要使用promise方式，不要在config对象里配置success、error、finally函数');
+            return this;
+        },
+        finally:function(){
+            console.error('这是一个无效的finally函数，如果要使用promise方式，不要在config对象里配置success、error、finally函数');
+            return this;
+        },
+    };
+
+    config.code=config.code||config.code==0?config.code:200;
 
     function changeLoading(bool){
         try{
@@ -3263,77 +3669,107 @@ function axiosWrap(option){
 
     changeRefresh(false);
 
-    function createAxios(option){
-        var url=(hostname=='localhost'||hostname=='127.0.0.1'||hostname=='172.16.21.99')?(option.url?option.url:'/api'):'/*.jsonRequest';
-        var method=option.method?option.method.toLowerCase():'';
+    function createAxios(config){
+        var url=(hostname=='localhost'||hostname=='127.0.0.1'||hostname=='172.16.21.92')?(config.url?config.url:'/api'):'/*.jsonRequest';
+        var method=config.method?config.method.toLowerCase():'';
         var paramsOrData=method=='get'?'params':'data';
-        var config={
+        var configResult={
             url:url,
             method:method,
-            [paramsOrData]:option.params,
-            headers:option.headers||{},
-            timeout:option.timeout||5000,
-            responseType:option.responseType||'json', //默认值是json，可选项 'arraybuffer', 'blob', 'document', 'json', 'text', 'stream'
+            [paramsOrData]:config.params,
+            headers:config.headers||{},
+            timeout:config.timeout||20000,
+            responseType:config.responseType||'json', //默认值是json，可选项 'arraybuffer', 'blob', 'document', 'json', 'text', 'stream'
             onUploadProgress:function(ev){
-                option.upFn&&option.upFn(ev);
+                config.upFn&&config.upFn(ev);
             },
             onDownloadProgress:function(ev){
-                option.downFn&&option.downFn(ev);
+                config.downFn&&config.downFn(ev);
             },
-        }
-        var axiosFn=axios(config);
-        var noLoginStatus=[403,409,503];
+        };
+        var axiosFn=axios(configResult);
 
-        if(option.success||option.error||option.finally){
-            !option.noMask&&changeLoading(true);
-
+        function axiosResultFn(resolve,reject){
             axiosFn.then(function(res){
                 var data=res.data;
 
                 if(res.status==200){
                     changeLoading(false);
-                    option.finally&&option.finally(data);
+                    config.finally&&config.finally(data);
 
-                    if(data.code==200){
-                        option.success&&option.success(data);
+                    if(data.code==config.code){
+                        if(resolve&&(Type(resolve)=='function')){
+                            return resolve(data);
+                        }else{
+                            config.success&&config.success(data);
+                        }
+                    }else if(data.code==505){
+                        nativeApi.toPerfectInfo();
                     }else{
-                        if(!option.noHint){
+                        if(!config.noHint){
                             if(data.msg){
                                 alerts(data.msg);
                             }else{
                                 alerts('请求代码错误');
                             }
                         }
+                        if(reject&&(Type(reject)=='function')){
+                            return reject(data);
+                        }
                     }
                 }else{
                     alerts('网络异常'+res.status);
                     changeRefresh(true,res.status);
-                    option.error&&option.error(res);
+                    if(reject&&(Type(reject)=='function')){
+                        return reject(res);
+                    }else{
+                        config.error&&config.error(res);
+                    }
                 }
             }).catch(function(error){
                 console.log(error);
                 if(error.response){
+                    var noLoginStatus=[403,409,503];
                     var hint=true;
 
-                    for(var i=0;i<noLoginStatus.length;i++){
-                        if(error.response.status==noLoginStatus[i]){
-                            hint=false;
-                            if(!option.noToLogin){
-                                nativeApi.toLogin();
-                            }
-                            break;
+                    if(~noLoginStatus.indexOf(error.response.status)){
+                        hint=false;
+                        if(config.headers['X-Access-Token']){
+                            nativeApi.tokenError();
+                        }else if(!config.noToLogin){
+                            nativeApi.toLogin();
                         }
                     }
 
                     if(hint){
                         alerts('网络异常');
                         changeRefresh(true,error.response.status);
-                        option.error&&option.error(error.response);
+                        if(reject&&(Type(reject)=='function')){
+                            return reject(error.response)
+                        }else{
+                            config.error&&config.error(error.response);
+                        }
+                    }
+                }else if(error.code=='ECONNABORTED'){
+                    alerts('请求超时');
+                    changeRefresh(true,'请求超时');
+                    if(reject&&(Type(reject)=='function')){
+                        return reject(error);
+                    }else{
+                        config.error&&config.error(error);
                     }
                 }
             });
+        };
+
+        !config.noMask&&changeLoading(true);
+        if(config.success||config.error||config.finally){
+            axiosResultFn();
+            return errorPromise;
         }else{
-            return axiosFn;
+            return new Promise(function(resolve,reject){
+                axiosResultFn(resolve,reject);
+            });
         }
     };
 
@@ -3346,76 +3782,26 @@ function axiosWrap(option){
             }
         }
 
-        !option.noMask&&changeLoading(true);
-
-        axios.all(apisArr).then(axios.spread(function(){
-            if(arguments&&arguments.length){
-                var resArr=Object.entries(arguments);
-                var dataArr=[];
-                var statusArr=[];
-                var codeArr=[];
-                var statusFail=[];
-                var codeFail=[];
-
-                resArr=resArr.map(function(item,index){
-                    return item[1];
-                });
-                dataArr=resArr.map(function(item,index){
-                    return item.data;
-                });
-                statusArr=resArr.map(function(item,index){
-                    return item.status;
-                });
-                codeArr=dataArr.map(function(item,index){
-                    return item.code;
-                });
-                statusFail=statusArr.filter(function(item,index){
-                    return item!=200;
-                });
-                codeFail=codeArr.filter(function(item,index){
-                    return item!=0;
-                });
-
-                all.fail&&all.fail(statusFail,codeFail);
-                if(statusFail&&statusFail.length==0){
-                    changeLoading(false);
-                    all.finally&&all.finally.apply(null,dataArr);
-
-                    if(codeFail&&codeFail.length==0){
-                        all.success&&all.success.apply(null,dataArr);
-                    }else{
-                        if(!all.noHint){
-                            alerts('请求代码错误');
-                        }
-                    }
+        function axiosAllResultFn(resolve,reject){
+            Promise.all(apisArr).then(function(){
+                if(resolve&&(Type(resolve)=='function')){
+                    return resolve(arguments[0]);
                 }else{
-                    alerts('网络异常');
-                    changeRefresh(true,statusFail.join(','));
-                    all.error&&all.error.apply(null,dataArr);
+                    all.success&&all.success(arguments[0]);
                 }
-            }
-        })).catch(function(error){
-            console.log(error);
-            if(error.response){
-                var hint=true;
+            });
+        };
 
-                for(var i=0;i<noLoginStatus.length;i++){
-                    if(error.response.status==noLoginStatus[i]){
-                        hint=false;
-                        nativeApi.toLogin();
-                        break;
-                    }
-                }
-
-                if(hint){
-                    alerts('网络异常');
-                    changeRefresh(true,error.response.status);
-                    all.error&&all.error(error.response);
-                }
-            }
-        });
+        if(all.success||all.error||all.finally){
+            axiosAllResultFn();
+            return errorPromise;
+        }else{
+            return new Promise(function(resolve,reject){
+                axiosAllResultFn(resolve,reject);
+            });
+        }
     }else{
-        return createAxios(option);
+        return createAxios(config);
     }
 };
 
@@ -3558,6 +3944,12 @@ function hasPrevHistoryPage(){
 
 //原生嵌入webview的刷新方法
 function webviewRefresh(){
+    //如果有定义window下的webviewRefresh，则执行window下的webviewRefresh
+    if(window.webviewRefresh){
+        window.webviewRefresh();
+        return;
+    }
+
     var rPath='';
     var pathname=window.location.pathname;
     var search='';
@@ -3593,12 +3985,14 @@ function controlBodyScroll(disableScroll,goTop){
 
     if(disableScroll){
         oHtml.style.height='100%';
+        oHtml.style.overflowY='hidden';
         oBody.style.height='100%';
         oBody.style.overflowY='hidden';
     }else{
         oHtml.style.height='auto';
+        oHtml.style.overflowY='visible';
         oBody.style.height='auto';
-        oBody.style.overflowY='auto';
+        oBody.style.overflowY='visible';
     }
 
     if(goTop){
@@ -3734,13 +4128,14 @@ export{
         reactCheck,//复选框
         reactSelect,//下拉框
 
-        getDecimal,
+        amountFormat0,
         limitLength,
         colorPrice,
         shortDate,
+        resetFile,
 
         QSA,
-        ajax,
+        ajaxWrap,
         Type,
         yydTimer,
         getStyle,
@@ -3755,6 +4150,7 @@ export{
         networkHandle,
         getPos,
         htmlFontSize,
+        unit,
         consoleNull,
         openMoblieDebug,
         routerChange,
@@ -3779,7 +4175,7 @@ export{
         computed,
         cBub,
         pDef,
-        Json,
+        copyJson,
         isPhone,
         isWeixin,
         isSafari,
@@ -3797,7 +4193,9 @@ export{
         getFlatternDistance,
         autoClipImage,
         goTop,
-        resetFile,
+        execCommandFn,
+        selectText,
+        imgFilesToBase64,
 
         routerMap,
         getPrevPathname,

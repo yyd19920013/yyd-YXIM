@@ -4,93 +4,95 @@
             title="晞景儿科互联网医院"
         />
 
-        <section class="content">
-            <div class="search">
-                <router-link to="/searchDoctor" class="searchWrap">
-                    <a class="iconfont icon-ic_search"></a>
-                    <input readonly="true" placeholder="搜索医生" />
-                </router-link>
-            </div>
+        <pullDown
+            :parent="this"
+            :refName="'content'"
+            :loading="loadFn"
+        />
 
-            <ol class="flow">
-                <li
-                    v-for="(item,index) in ['选择医生','在线问诊','查看医嘱/处方','送药上门']"
-                    :style="{
-                        backgroundImage:'url('+require(`images/icon/series/img${index+1}.png`)+')',
-                    }"
-                >
-                    {{item}}
-                </li>
-            </ol>
-
-            <router-link
-                v-show="userId&&userId!='null'"
-                class="haveNoEndInquiry"
-                :to="{
-                    path:'/user/myInquiry',
-                }"
-            >
-                发现您有未结束的问诊，去看看~
-            </router-link>
-
-            <div
-                v-show="hotDept&&hotDept.length>0"
-                class="nav"
-            >
-                <a
-                    v-for="(item,index) in hotDept"
-                    :style="{
-                        backgroundImage:'url('+getImgUrl()+item.fileId+')',
-                    }"
-                    @click="$router.push({
-                        path:'/findDoctor',
-                        query:{
-                            standardDeptId:item.deptId,
-                            alias:item.alias,
-                        }
-                    })"
-                >
-                    {{item.alias}}
-                </a>
-            </div>
-
-            <div class="hotDoctor">
-                <router-link to="/findDoctor" class="title">
-                    <img :src="require('images/icon/img_doctor.png')" alt="图标" />
-                    <span class="more">
-                        更多
-                        <i class="iconfont icon-jiantou"></i>
-                    </span>
-                </router-link>
-
-                <div class="main">
-                    <doctorList
-                        :api="this.residentIndex"
-                        :onceLoad="true"
-                        :firstLoad="getHomeData"
-                    />
+        <section class="content" ref="content">
+            <div class="wrap" v-if="onOff">
+                <div class="search">
+                    <router-link to="/searchDoctor" class="searchWrap">
+                        <a class="iconfont icon-ic_search"></a>
+                        <input readonly="true" placeholder="搜索医生" />
+                    </router-link>
                 </div>
+
+                <ol class="flow">
+                    <li
+                        v-for="(item,index) in ['选择医生','在线问诊','查看医嘱/处方','送药上门']"
+                        :style="{
+                            backgroundImage:'url('+require(`images/icon/series/img${index+1}.png`)+')',
+                        }"
+                    >
+                        {{item}}
+                    </li>
+                </ol>
+
+                <router-link
+                    v-show="userId&&userId!='null'"
+                    class="haveNoEndInquiry"
+                    :to="{
+                        path:'/user/myInquiry',
+                    }"
+                >
+                    发现您有未结束的问诊，去看看~
+                </router-link>
+
+                <div
+                    v-show="hotDept&&hotDept.length>0"
+                    class="nav"
+                >
+                    <a
+                        v-for="(item,index) in hotDept"
+                        :style="{
+                            backgroundImage:'url('+getImgUrl()+item.fileId+')',
+                        }"
+                        @click="$router.push({
+                            path:'/findDoctor',
+                            query:{
+                                standardDeptId:item.deptId,
+                                alias:item.alias,
+                            }
+                        })"
+                    >
+                        {{item.alias}}
+                    </a>
+                </div>
+
+                <div class="hotDoctor">
+                    <router-link to="/findDoctor" class="title">
+                        <img :src="require('images/icon/img_doctor.png')" alt="图标" />
+                        <span class="more">
+                            更多
+                            <i class="iconfont icon-jiantou"></i>
+                        </span>
+                    </router-link>
+
+                    <div class="main">
+                        <doctorList
+                            :api="this.residentIndex"
+                            :onceLoad="true"
+                            :firstLoad="getHomeData"
+                        />
+                    </div>
+                </div>
+
+                <router-link
+                    to="/user"
+                    class="inquiry"
+                ></router-link>
             </div>
-
-            <router-link
-                to="/user"
-                class="inquiry"
-            ></router-link>
-
-            <button
-                type="button"
-                @click="hasApp('',3,endFn)"
-            >
-                判断是否存在app
-            </button>
         </section>
     </div>
 </template>
 
 <script>
-    import {getImgUrl,lStore,nativeApi,yydTimer} from 'js/yydjs';
+    import {getImgUrl,lStore,nativeApi,webviewRefresh} from 'js/yydjs';
     import {residentIndex,findUnfinishConsult} from 'services';
     import doctorList from 'components/common/doctorList';
+    import pullDown from 'components/common/pullDown';
 
     export default{
         data(){
@@ -99,6 +101,7 @@
                 hotDept:[],
                 departmentsList:[],
                 userId:'',
+                onOff:true,
                 residentIndex,
                 getImgUrl,
             }
@@ -106,7 +109,7 @@
 
         mounted(){
             //查询是否有未结束问诊
-            //this.unfinishFn();
+            this.unfinishFn();
         },
 
         methods:{
@@ -118,65 +121,18 @@
                     this.userId=res.body;
                 });
             },
-            hasApp(url,index,endFn){
-                //判断是否存在某个app
-                //url（自己有调起app的链接，比如支付宝付款链接）
-                //index（根据索引选择判断的协议）
-                //endFn（回调函数，参数为是否存在某个app的布尔值）
-                function hasApp(url,index,endFn){
-                    var agreementArr=['weixin://','alipays://','taobao://','weibo://'];
-                    var exist=true;
-                    var delay=3000;
-                    var threshold=66;
-                    var hidden=false;
-                    var oDate=+new Date();
-                    var oIframe=document.createElement('iframe');
-
-                    document.body.onpagehide=document.onvisibilitychange=function(){
-                        console.log('隐藏');
-                        hidden=true;
-                    };
-
-                    function createIframe(dom,src){
-                        dom.src=src;
-                        dom.style.display='none';
-                        document.body.appendChild(dom);
-                    };
-
-                    if(url){
-                        createIframe(oIframe,url);
-                        setTimeout(function(){
-                            document.body.appendChild(oIframe);
-                        },delay/5);
-                    }else{
-                        createIframe(oIframe,agreementArr[index]);
-                    }
-
-                    setTimeout(function(){
-                        var oNow=+new Date();
-                        var iDiff=oNow-oDate;
-
-                        hidden=document.hidden||document.webkitHidden;
-
-                        if(iDiff<delay+threshold){
-                            exist=false;
-                            if(hidden){
-                                exist=true;
-                            }
-                        }
-                        document.body.removeChild(oIframe);
-                        endFn&&endFn(exist);
-                    },delay);
-                };
-                hasApp(url,index,endFn);
-            },
-            endFn(exist){
-                alert(exist);
+            loadFn(finished){
+                this.onOff=false;
+                setTimeout(()=>{
+                    this.onOff=true;
+                    finished();
+                },300);
             },
         },
 
         components:{
             doctorList,
+            pullDown,
         },
     }
 </script>

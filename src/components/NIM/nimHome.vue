@@ -158,9 +158,13 @@
                     this.zIndex++;
                     oPage.style.zIndex=this.zIndex;
                 }
+
+                if(lStore.get('nimAccount')&&lStore.get('nimToken')){
+                    vm.$emit('componentsUpdate');
+                }
             },
             judgeLogin(){
-                if(!lStore.get('account')||!lStore.get('token')){
+                if(!lStore.get('nimAccount')||!lStore.get('nimToken')){
                     alert('请先登录');
                     this.controlPage('nimLogin','nimLoginWrap',true);
                 }else{

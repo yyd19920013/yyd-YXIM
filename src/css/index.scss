@@ -1,5 +1,4 @@
 @charset"utf-8";
-@import '//at.alicdn.com/t/font_827303_yjnimd2fl5.css';
 /* CSS Document */
 
 /*reset*/
@@ -11,11 +10,11 @@ img{display:inline-block;border:none;vertical-align:top;position:relative;}
 img:before{display:inline-block;content:attr(alt);width:100%;padding:10px;height:100%;background-color:#eee;position:absolute;left:0;top:0;}
 em,i{font-style:normal;}
 h1,h2,h3,h4,h5,h6,b,label,th{font-weight:normal;}
-a{text-decoration:none;-webkit-tap-highlight-color:rgba(0,0,0,0);}
+a,button,label{text-decoration:none;-webkit-tap-highlight-color:rgba(0,0,0,0);}
 table{border-collapse:collapse;}
 input,textarea,select,button{outline:none;font-family:arial,helvetica,sans-serif;color:#333;font-size:14px;}
-textarea{resize:none;overflow:auto;}
-input[type="text"],input[type="number"],input[type="password"],input[type="email"],input[type="url"],input[type="submit"]{-webkit-appearance:none;border:1px solid #ddd;}
+textarea{vertical-align:top;resize:none;overflow:auto;}
+input[type="text"],input[type="number"],input[type="password"],input[type="email"],input[type="url"],input[type="submit"]{-webkit-appearance:none;border-color:#ddd;}
 input[type="number"]::-webkit-inner-spin-button,input[type="number"]::-webkit-outer-spin-button{-webkit-appearance:none;font-size:14px;}
 select,textarea{border:1px solid #ddd;}
 iframe{vertical-align:top;-webkit-overflow-scrolling:touch;overflow:auto;}
@@ -135,7 +134,7 @@ input:-webkit-autofill{-webkit-box-shadow:inset 0 0 0px 1000px #fff;}
 
 /*layout*/
 #webpack-hot-middleware-clientOverlay{ display:none!important;}
-#app{ max-width: 768px; margin: 0 auto; }
+#app{ max-width: 768px; margin: 0 auto; position: relative; }
 
 /*路由过渡*/
 .router-fade-leave-active{ transition: opacity .1s; opacity: 0; }

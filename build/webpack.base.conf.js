@@ -22,9 +22,10 @@ var webpackConfig = {
       : config.dev.assetsPublicPath
   },
   resolve: {
-    extensions: ['.js', '.vue', '.less', '.css', '.scss'],
+    extensions: ['.js', '.vue', '.json'],
     alias: {
       'vue$': 'vue/dist/vue.esm.js',
+      'root': resolve('./'),
       '@': resolve('src'),
       'config': resolve('config'),
       'src': resolve('src'),
@@ -75,7 +76,13 @@ var webpackConfig = {
         }
       }
     ]
-  }
+  },
+  externals:{
+    'vue':'Vue',
+    'vue-router':'VueRouter',
+    'vuex':'Vuex',
+    'axios':'axios',
+  },
 }
 
 module.exports = vuxLoader.merge(webpackConfig, {

@@ -14,20 +14,19 @@ import {XDialog,AlertPlugin,ConfirmPlugin} from 'src/VUX'
 import fastclick from 'fastclick';
 import * as yyd from 'js/yydjs';
 import * as filter from './filter';
-import {QSA,alerts,consoleNull,htmlFontSize,networkHandle,openMoblieDebug,bind,unbind,pDef,lStore,sStore,isPhone,strToJson,controlBodyScroll,hasPrevHistoryPageFn,webviewRefresh} from 'js/yydjs';
+import {QSA,alerts,consoleNull,htmlFontSize,networkHandle,openMoblieDebug,bind,unbind,pDef,lStore,sStore,isPhone,strToJson,controlBodyScroll,hasPrevHistoryPageFn} from 'js/yydjs';
 import {URL,findDic} from 'services';
 
 //处理点击延迟
 let hostname=window.location.hostname;
-let noNative=hostname!='localhost'&&hostname!='127.0.0.1'&&hostname!='172.16.21.99';;
+let noNative=hostname!='localhost'&&hostname!='127.0.0.1'&&hostname!='172.16.21.92';;
 
 if(noNative){
     fastclick.attach(document.body);
 }
 
 //调用插件
-Vue.use(VueRouter);
-Vue.use(Vuex);
+// Vue.use(VueRouter);
 Vue.use(AlertPlugin);
 Vue.use(ConfirmPlugin);
 
@@ -214,7 +213,7 @@ MyPlugin.install=function(Vue,options){
         Vue.prototype.dictionaries=dictionaries;
         vmEvent.$emit('dictionariesFinished',dictionaries);
     });
-}
+};
 
 //调用 `MyPlugin.install(Vue)`
 Vue.use(MyPlugin);
@@ -239,6 +238,9 @@ router.beforeEach((to,from,next)=>{
         isLoading:true,
     });
 
+    //根据meta值改变title
+    if(to.meta&&to.meta.title)document.title=to.meta.title;
+
     //恢复正常样式
     document.body.classList.remove('app');
 
@@ -251,6 +253,10 @@ router.afterEach((to,from)=>{
         type:'UPDATE_LOADINGSTATUS',
         isLoading:false,
     });
+
+    //关闭vux组件的遮罩
+    vm.$vux.alert.hide();
+    vm.$vux.confirm.hide();
 
     //记录历史记录
     hasPrevHistoryPageFn.record();
@@ -301,17 +307,6 @@ router.afterEach((to,from)=>{
     };
     queryHandle();
 
-    //根据路由改变title
-    const changeTitle=()=>{
-        let defaultTitle='';
-        let json={
-                    //'/home':'木有车B2B首页',
-                    //'/user/myShopQRcode':'店铺二维码',
-                };
-        document.title=json[to.path]?json[to.path]:defaultTitle;
-    };
-    changeTitle();
-
     //根据地址传参计算状态栏高度
     const computedStatusBarHeight=()=>{
         let {app,statusBarHeight}=to.query;
@@ -337,9 +332,6 @@ router.afterEach((to,from)=>{
             },
             logout(){//logout方法
                 lStore.set('token','');
-            },
-            webviewRefresh(){
-                webviewRefresh();
             },
         };
 

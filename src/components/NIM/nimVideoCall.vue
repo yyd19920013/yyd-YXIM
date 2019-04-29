@@ -30,12 +30,15 @@
 <script>
     import vm from 'src/main';
     import {lStore,sStore,Type} from 'js/yydjs';
+    import nimInit from './nimInit';
     import nimNetcallInit from './nimNetcallInit';
 
     export default{
         data(){
             return{
+                updataOnOff:true,
                 nimChat:sStore.get('nimChat')||{},
+                agentDownloadUrl:'https://yx-web-nosdn.netease.im/package/1543999612/WebAgent_Setup_V2.9.0.1204.zip?download=WebAgent_Setup_V2.9.0.1204.zip',
                 width:document.documentElement.clientWidth,
                 height:document.documentElement.clientHeight,
                 showNimVideoCall:false,
@@ -82,7 +85,8 @@
         },
 
         created(){
-            vm.$on('onconnect',this.netcallInit);
+            vm.$on('componentsUpdate',this.componentsUpdate);
+            vm.$on('nimOnConnect',this.netcallInit);
 
             window.nimVideoCall=this;
             window.showNimVideoCall=()=>{
@@ -97,16 +101,33 @@
 
         },
 
-        updated(){
-            this.nimChat=sStore.get('nimChat')||{};
-        },
-
         beforeDestroy(){
-            vm.$off('onconnect',this.netcallInit);
+            vm.$off('componentsUpdate',this.componentsUpdate);
+            vm.$off('nimOnConnect',this.netcallInit);
             clearTimeout(this.callTimer);
         },
 
         methods:{
+            componentsUpdate(){
+                this.updataOnOff=false;
+                setTimeout(()=>{
+                    this.nimChat=sStore.get('nimChat')||{};
+                    this.updataOnOff=true;
+                },300);
+            },
+            checkPlatform(endFn){
+                //判断是否是win7或win10
+                if (~platform.os.family.indexOf("Windows")&&(platform.os.version=='7'||platform.os.version=='10')){
+                    //判断是否是Chrome, Edge, IE 11
+                    if(/Chrome/gi.test(platform.name)||platform.name=='Microsoft Edge'||(platform.name=='IE'&&platform.version=='11.0')){
+                        endFn&&endFn();
+                    }else{
+                        alert('当前浏览器不支持音视频功能，请使用 Chrome、IE 11 或者 Edge 浏览器');
+                    }
+                }else{
+                    alert('当前系统不支持音视频功能，请使用win7、win10系统');
+                }
+            },
             controlNimVideoCall(show){
                 this.showNimVideoCall=show;
             },
@@ -154,30 +175,39 @@
                 this.callResponse();
             },
             signalInit(endFn){
-                //信令通道初始化完毕之后, 开发者可以启用音视频通话相关的 UI, 比如说展示呼叫别人的按钮
-                //信令通道初始化失败的时候, 请展示错误并禁用所有音视频通话相关的 UI
-                netcall.initSignal().then(()=>{
-                    this.signalInited=true;
+                //先检查系统和浏览器是否支付pcAgent
+                this.checkPlatform(()=>{
+                    //信令通道初始化完毕之后, 开发者可以启用音视频通话相关的 UI, 比如说展示呼叫别人的按钮
+                    //信令通道初始化失败的时候, 请展示错误并禁用所有音视频通话相关的 UI
+                    netcall.initSignal().then(()=>{
+                        this.signalInited=true;
 
-                    if(Type(endFn)=='function'){
-                        endFn();
-                    }
-                }).catch((err)=>{
-                    console.log(err);
-                    this.signalInited=false;
-                });
+                        if(Type(endFn)=='function'){
+                            endFn();
+                        }
+                    }).catch((err)=>{
+                        console.log(err);
+                        this.signalInited=false;
+                        if(err.code=='noPC'){
+                            if(confirm('请安装PC Agent，方可使用音视频功能')){
+                                window.open(this.agentDownloadUrl);
+                                alert('下载完成后，需手动安装插件');
+                            }
+                        }
+                    });
 
-                //当信令通道断开时, 会触发 signalClosed 事件
-                netcall.off('signalClosed');
-                netcall.on('signalClosed',()=>{
-                    this.signalInited=false;
-                    this.hangup();
-                });
+                    //当信令通道断开时, 会触发 signalClosed 事件
+                    netcall.off('signalClosed');
+                    netcall.on('signalClosed',()=>{
+                        this.signalInited=false;
+                        this.hangup();
+                    });
 
-                //初始化过程中会通过 devices 事件回传所有的设备列表
-                netcall.off('devices');
-                netcall.on('devices',(obj)=>{
-                    //console.log('on devices',obj);
+                    //初始化过程中会通过 devices 事件回传所有的设备列表
+                    netcall.off('devices');
+                    netcall.on('devices',(obj)=>{
+                        //console.log('on devices',obj);
+                    });
                 });
             },
             beCalling(){
@@ -371,7 +401,7 @@
                         if(!netcall.callAccepted){
                             this.hangup();
                         }
-                    },1000*5);
+                    },1000*30);
                 };
 
                 this.netcallInit(()=>{
@@ -379,8 +409,8 @@
                 });
             },
             response(){
-                let {sessionConfig}=this;
-                let {beCalledInfo}=this.netcallInfo;
+                let {sessionConfig,netcallInfo}=this;
+                let {beCalledInfo}=netcallInfo;
 
                 netcall.response({
                     accepted:true,

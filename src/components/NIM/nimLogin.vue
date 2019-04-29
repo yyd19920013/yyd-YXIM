@@ -56,9 +56,8 @@
                     'yyd4',
                     'yyd5',
                     //测试
+                    '92cce3dc3ee648908840a0d7f3315cc2',
                     'f053e8e6d2824c4bb499919b49c16473',
-                    '59e214fd731947fea8e9ac70de80f6d0',
-                    '57784f1273d34680ad2b0d8abd6f3452',
                 ],
                 tokenArr:[
                     'a7a1145cc852fd504e4e16d33d45323b',
@@ -67,9 +66,8 @@
                     'ee0ddfda5d81fb7b1f8e7cc67aefb418',
                     'ae5bf35afeb0b1dba808bd68a2e700b5',
                     //测试
+                    '69bd0860c40b3b9260a01c321296c8f6',
                     '7c079e9043b77b90c32e2c372194ccd3',
-                    '4af0c05c4377f0fe9cb6a9456c0dc0e3',
-                    'a02201437cdc3a99dc1f3400bc0be731',
                 ],
             }
         },
@@ -88,8 +86,8 @@
 
         methods:{
             login(){
-                lStore.set('account',this.accountArr[this.accountIndex]);
-                lStore.set('token',this.tokenArr[this.accountIndex]);
+                lStore.set('nimAccount',this.accountArr[this.accountIndex]);
+                lStore.set('nimToken',this.tokenArr[this.accountIndex]);
 
                 window.controlPage('nimLogin','nimLoginWrap',false);
 

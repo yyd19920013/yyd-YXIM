@@ -1,5 +1,5 @@
 <template>
-    <div class="nimChat">
+    <div v-if="updataOnOff" class="nimChat">
         <nimHeader
             :parent="parent"
             :controlPageName="'nimChat'"
@@ -19,7 +19,7 @@
                         <div
                             :class="{
                                 msgWrap:true,
-                                other:lStore.get('account')!=item.from,
+                                other:lStore.get('nimAccount')!=item.from,
                             }"
                         >
                             <div class="nickName">
@@ -160,6 +160,7 @@
     export default{
         data(){
             return{
+                updataOnOff:true,
                 nimChat:sStore.get('nimChat')||{},
                 msgList:[],
                 msg:'',
@@ -186,6 +187,7 @@
         },
 
         created(){
+            vm.$on('componentsUpdate',this.componentsUpdate);
             vm.$on('nimOnConnect',this.getHistoryMsgs);
             vm.$on('nimOnMsg',this.getMsgs);
             vm.$on('nimVideoCallSuccess',this.nimVideoCallSuccess);
@@ -196,12 +198,21 @@
         },
 
         beforeDestroy(){
+            vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnConnect',this.getHistoryMsgs);
             vm.$off('nimOnMsg',this.getMsgs);
             vm.$off('nimVideoCallSuccess',this.nimVideoCallSuccess);
         },
 
         methods:{
+            componentsUpdate(){
+                this.updataOnOff=false;
+                setTimeout(()=>{
+                    this.nimChat=sStore.get('nimChat')||{};
+                    this.updataOnOff=true;
+                    this.scrollBottom();
+                },300);
+            },
             nimVideoCallSuccess(obj){
                 window.showNimVideoCall(true);
             },

@@ -8,6 +8,16 @@ window.Netcall=Netcall;
 window.WebRTC=WebRTC;
 window.nimData={};
 
+/*
+    使用此SDKs之前需要在webpack.base.conf.js文件中的babel-loader中忽略NIM_Web_为前缀的js文件
+    {
+        test: /\.js$/,
+        loader: 'babel-loader',
+        exclude: /NIM_Web_*.*\.js/,
+        include: [resolve('src'), resolve('test')]
+    },
+*/
+
 const nimInit=(account,token)=>{
     reconnection();
     function reconnection(){
@@ -51,13 +61,16 @@ const nimInit=(account,token)=>{
             'd6d808f3f7906a037b35e79395c6c4e0',//自己
             '2969cb2602b021155eaee040df91367d',//测试环境
         ];
+        var appKey=appKeyArr[1];
+        var account=account||lStore.get('nimAccount');
+        var token=token||lStore.get('nimToken');
 
         return SDK.NIM.getInstance({
             //基本配置
             debug:false,//是否打开调试模式
-            appKey:appKeyArr[1],//在云信管理后台查看应用的appKey
-            account:account||lStore.get('account'),//登录账户
-            token:token||lStore.get('token'),//登录账户令牌
+            appKey:appKey,//在云信管理后台查看应用的appKey
+            account:account,//登录账户
+            token:token,//登录账户令牌
             db:false,//是否使用数据库
             syncSessionUnread:true,//是否同步会话的未读数，默认不同步
             syncRobots:true,//是否同步机器人
@@ -66,7 +79,6 @@ const nimInit=(account,token)=>{
             //连接与重连
             onconnect(res){//连接建立后的回调, 会传入一个对象, 包含登录的信息
                 vm.$emit('nimOnConnect',res);
-                window.nimData.isConnected=true;
             },
             onerror(error){//发生错误的回调, 会传入错误对象
                 vm.$emit('nimOnError',error);
@@ -167,7 +179,7 @@ const nimInit=(account,token)=>{
                 vm.$emit('nimOnFriendsAll',window.nimData.friends);
             },
             onsyncfriendaction(obj){//当前登录用户在其它端进行好友相关的操作后的回调
-                switch (obj.type) {
+                switch (obj.type){
                     case 'addFriend'://你在其它端直接加了一个好友
                             onAddFriend(obj.friend);
                         break;
@@ -329,7 +341,9 @@ const nimInit=(account,token)=>{
                 for(let attr in window.nimData.msgs){
                     lastMsgJson[attr]=window.nimData.msgs[attr][window.nimData.msgs[attr].length-1];
                     if(lastMsgJson[attr].type=='custom'){
-                        lastMsgJson[attr].content=JSON.parse(lastMsgJson[attr].content);
+                        try{
+                            lastMsgJson[attr].content=JSON.parse(lastMsgJson[attr].content);
+                        }catch(e){}
                     }
                 }
 
@@ -372,6 +386,7 @@ const nimInit=(account,token)=>{
                 vm.$emit('nimOnOfflineCustomSysMsgs',sysMsgs);
             },
             oncustomsysmsg(sysMsg){//收到自定义系统通知的回调, 会传入系统通知
+                console.log(sysMsgs);
                 vm.$emit('nimOnCustomSysMsg',sysMsgs);
             },
 

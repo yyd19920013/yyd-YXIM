@@ -2,14 +2,14 @@
     <header
         class="header1"
         :style="{
-            height:(44+statusBarHeight) + 'px',
+            height:unit(44+statusBarHeight),
         }"
     >
         <div
             class="headerWrap"
             :style="{
-                height:(44+statusBarHeight) + 'px',
-                paddingTop:statusBarHeight + 'px',
+                height:unit(44+statusBarHeight),
+                paddingTop:unit(statusBarHeight),
             }"
         >
             <div class="wrap">
@@ -40,12 +40,12 @@
 </template>
 
 <script>
-    import {lStore,hasPrevHistoryPageFn,nativeApi} from 'js/yydjs';
+    import {lStore,hasPrevHistoryPageFn,nativeApi,unit} from 'js/yydjs';
 
     export default{
         data(){
             return{
-
+                unit,
             }
         },
 
@@ -97,7 +97,7 @@
             rightClick(){
                 let {path,click}=this.right;
 
-                path&&this.router.push(path);
+                path&&this.$router.push(path);
                 click&&click();
             },
         },
