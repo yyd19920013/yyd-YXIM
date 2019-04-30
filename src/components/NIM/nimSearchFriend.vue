@@ -56,6 +56,7 @@
 </template>
 
 <script>
+	import vm from 'src/main';
     import nimHeader from './nimHeader';
 
     export default{
@@ -79,8 +80,23 @@
                 default:null,
             },
         },
+        
+        created(){
+            vm.$on('componentsUpdate',this.componentsUpdate);
+        },
+        
+        beforeDestroy(){
+            vm.$off('componentsUpdate',this.componentsUpdate);
+        },
 
         methods:{
+        	componentsUpdate(controlName){
+            	if(controlName!='nimSearchFriend')return;
+                this.tabIndex=0;
+                this.searchValue='';
+                this.resultList=[];
+                this.showNoData=false;
+            },
             tabControl(index){
                 this.tabIndex=index;
             },

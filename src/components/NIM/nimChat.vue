@@ -1,5 +1,5 @@
 <template>
-    <div v-if="updataOnOff" class="nimChat">
+    <div class="nimChat">
         <nimHeader
             :parent="parent"
             :controlPageName="'nimChat'"
@@ -160,7 +160,6 @@
     export default{
         data(){
             return{
-                updataOnOff:true,
                 nimChat:sStore.get('nimChat')||{},
                 msgList:[],
                 msg:'',
@@ -205,13 +204,12 @@
         },
 
         methods:{
-            componentsUpdate(){
-                this.updataOnOff=false;
-                setTimeout(()=>{
-                    this.nimChat=sStore.get('nimChat')||{};
-                    this.updataOnOff=true;
-                    this.scrollBottom();
-                },300);
+            componentsUpdate(controlName){
+            	if(controlName!='nimChat')return;
+                this.nimChat=sStore.get('nimChat')||{};
+                this.msgList=[];
+            	this.getHistoryMsgs();
+            	this.scrollBottom();
             },
             nimVideoCallSuccess(obj){
                 window.showNimVideoCall(true);
@@ -236,7 +234,7 @@
             },
             scrollBottom(){
                 setTimeout(()=>{
-                    let oContent=this.$refs.content;
+                	let oContent=this.$refs.content;
                     let {scene,to}=this.nimChat;
 
                     oContent.scrollTop=oContent.scrollHeight;

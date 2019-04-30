@@ -110,12 +110,11 @@
                 pageControl:{
                     nimLogin:pageControl.nimLogin,
                     nimMessageList:pageControl.nimMessageList,
-                    nimAddressList:!pageControl.nimMessageList,
+                    nimAddressList:pageControl.nimAddressList,
                     nimChat:pageControl.nimChat,
                     nimSearchFriend:pageControl.nimSearchFriend,
                     nimCreateTeam:pageControl.nimCreateTeam,
                 },
-                zIndex:0,
                 tabIndex:pageControl.nimMessageList?0:1,
             }
         },
@@ -152,15 +151,8 @@
             controlPage(controlName,refName,show){
                 this.pageControl[controlName]=show;
 
-                let oPage=this.$refs[refName];
-
-                if(oPage&&show){
-                    this.zIndex++;
-                    oPage.style.zIndex=this.zIndex;
-                }
-
                 if(lStore.get('nimAccount')&&lStore.get('nimToken')){
-                    vm.$emit('componentsUpdate');
+                    vm.$emit('componentsUpdate',controlName);
                 }
             },
             judgeLogin(){
@@ -204,6 +196,7 @@
 
     .nimHome{
         height: 100vh;
+        border-top: 40px solid transparent;
         background-color: #fff;
         position: relative;
         overflow: hidden;
@@ -231,16 +224,16 @@
         }
 
         .tab{
+        	width: 100%;
             height: 40px;
+            line-height: 40px;
+            border-bottom: 1px solid #ddd;
+            text-align: center;
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 100;
             .tabWrap{
-                width: 100%;
-                height: 40px;
-                line-height: 40px;
-                border-bottom: 1px solid #ddd;
-                text-align: center;
-                position: absolute;
-                left: 0;
-                top: 0;
                 li{
                     float: left;
                     width: 50%;
@@ -253,12 +246,6 @@
                         color: #fff;
                     }
                 }
-            }
-        }
-        .nimMessageListWrap,.nimAddressListWrap{
-            top: 40px;
-            .scrollContainer{
-                border-bottom: 40px solid transparent;
             }
         }
     }

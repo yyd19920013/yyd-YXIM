@@ -60,10 +60,14 @@
     @import '~css/public.scss';
 
     .nimHeader{
+    	width: 100%;
         height: 40px;
         line-height: 40px;
         border-bottom: 1px solid #ddd;
-        position: relative;
+        background-color: #fff;
+        position: fixed;
+        left: 0;
+        top: 0;
         z-index: 1000;
         .nimHeaderWrap{
             width: 100%;

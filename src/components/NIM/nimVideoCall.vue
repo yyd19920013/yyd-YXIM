@@ -36,7 +36,6 @@
     export default{
         data(){
             return{
-                updataOnOff:true,
                 nimChat:sStore.get('nimChat')||{},
                 agentDownloadUrl:'https://yx-web-nosdn.netease.im/package/1543999612/WebAgent_Setup_V2.9.0.1204.zip?download=WebAgent_Setup_V2.9.0.1204.zip',
                 width:document.documentElement.clientWidth,
@@ -86,7 +85,7 @@
 
         created(){
             vm.$on('componentsUpdate',this.componentsUpdate);
-            vm.$on('nimOnConnect',this.netcallInit);
+//          vm.$on('nimOnConnect',this.netcallInit);
 
             window.nimVideoCall=this;
             window.showNimVideoCall=()=>{
@@ -108,12 +107,12 @@
         },
 
         methods:{
-            componentsUpdate(){
-                this.updataOnOff=false;
-                setTimeout(()=>{
-                    this.nimChat=sStore.get('nimChat')||{};
-                    this.updataOnOff=true;
-                },300);
+            componentsUpdate(controlName){
+            	if(controlName!='nimChat')return;
+                this.nimChat=sStore.get('nimChat')||{};
+                this.showNimVideoCall=false;
+                this.netcallInited=false;
+                this.signalInited=false;
             },
             checkPlatform(endFn){
                 //判断是否是win7或win10

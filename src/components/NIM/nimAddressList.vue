@@ -177,6 +177,7 @@
         },
 
         created(){
+        	vm.$on('componentsUpdate',this.componentsUpdate);
             vm.$on('nimOnFriendsAll',this.getFriendsList);
             vm.$on('nimOnTeamsAll',this.getTeamsList);
             vm.$on('nimOnBlacklistAll',this.getBlacklist);
@@ -185,6 +186,7 @@
         },
 
         beforeDestory(){
+        	vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnFriendsAll',this.getFriendsList);
             vm.$off('nimOnTeamsAll',this.getTeamsList);
             vm.$on('nimOnBlacklistAll',this.getBlacklist);
@@ -193,6 +195,13 @@
         },
 
         methods:{
+        	componentsUpdate(controlName){
+            	if(controlName!='nimSearchFriend')return;
+            	let {friends,teamMembers}=window.nimData;
+            	
+               	this.friendsList=friends;
+                this.teamsList=teamMembers;
+            },
             getFriendsList(res){
                 this.friendsList=res;
             },

@@ -97,14 +97,28 @@
         },
 
         created(){
+        	vm.$on('componentsUpdate',this.componentsUpdate);
             vm.$on('nimOnFriendsAll',this.getFriendsList);
         },
 
         beforeDestroy(){
+        	vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnFriendsAll',this.getFriendsList);
         },
 
         methods:{
+        	componentsUpdate(controlName){
+            	if(controlName!='nimCreateTeam')return;
+            	let {friends}=window.nimData;
+            	
+                this.tabIndex=0;
+                this.showNoData=false;
+                this.name='';
+                this.intro='';
+                this.announcement='';
+                this.friendsList=friends;
+                this.accounts=[];
+            },
             createId(index){
                 return `nimCreateTeam${index}`;
             },
@@ -131,6 +145,7 @@
                     done: (error, obj)=>{
                         if(!error){
                             alert('创建群成功');
+                            vm.$emit('componentsUpdate','nimAddressList');
                         }else{
                             alert(error);
                         }
