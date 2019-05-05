@@ -85,7 +85,7 @@
                     scene,
                     to,
                 });
-                window.controlPage('nimChat','nimChatWrap',true);
+                window.controlPage('nimChat',true);
             },
             deleteSession(scene,to){
                 nim.deleteSession({

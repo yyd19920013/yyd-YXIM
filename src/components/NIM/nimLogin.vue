@@ -89,7 +89,7 @@
                 lStore.set('nimAccount',this.accountArr[this.accountIndex]);
                 lStore.set('nimToken',this.tokenArr[this.accountIndex]);
 
-                window.controlPage('nimLogin','nimLoginWrap',false);
+                window.controlPage('nimLogin',false);
 
                 nimInit();
             },

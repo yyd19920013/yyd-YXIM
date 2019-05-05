@@ -29,7 +29,7 @@
 
 <script>
     import vm from 'src/main';
-    import {lStore,sStore,Type} from 'js/yydjs';
+    import {lStore,sStore,Type,alerts} from 'js/yydjs';
     import nimInit from './nimInit';
     import nimNetcallInit from './nimNetcallInit';
 
@@ -72,6 +72,8 @@
                     busy:false,//是否正忙
                 },
                 callTimer:null,
+                callDoneTimer:null,
+                callDone:true,
             }
         },
 
@@ -108,7 +110,7 @@
 
         methods:{
             componentsUpdate(controlName){
-            	if(controlName!='nimChat')return;
+                if(controlName!='nimChat')return;
                 this.nimChat=sStore.get('nimChat')||{};
                 this.showNimVideoCall=false;
                 this.netcallInited=false;
@@ -159,6 +161,8 @@
 
                 //停止信令通道
                 netcall.stopSignal();
+
+                this.callDone=true;
             },
             netcallInit(endFn){
                 nimNetcallInit(0,this.$refs.container,this.$refs.remoteContainer);
@@ -174,11 +178,24 @@
                 this.callResponse();
             },
             signalInit(endFn){
-                //先检查系统和浏览器是否支付pcAgent
+                //先检查系统和浏览器是否支持pcAgent
                 this.checkPlatform(()=>{
                     //信令通道初始化完毕之后, 开发者可以启用音视频通话相关的 UI, 比如说展示呼叫别人的按钮
                     //信令通道初始化失败的时候, 请展示错误并禁用所有音视频通话相关的 UI
                     netcall.initSignal().then(()=>{
+                        //当信令通道断开时, 会触发 signalClosed 事件
+                        netcall.off('signalClosed');
+                        netcall.on('signalClosed',()=>{
+                            this.signalInited=false;
+                            this.hangup();
+                        });
+
+                        //初始化过程中会通过 devices 事件回传所有的设备列表
+                        netcall.off('devices');
+                        netcall.on('devices',(obj)=>{
+                            //console.log('on devices',obj);
+                        });
+
                         this.signalInited=true;
 
                         if(Type(endFn)=='function'){
@@ -193,19 +210,6 @@
                                 alert('下载完成后，需手动安装插件');
                             }
                         }
-                    });
-
-                    //当信令通道断开时, 会触发 signalClosed 事件
-                    netcall.off('signalClosed');
-                    netcall.on('signalClosed',()=>{
-                        this.signalInited=false;
-                        this.hangup();
-                    });
-
-                    //初始化过程中会通过 devices 事件回传所有的设备列表
-                    netcall.off('devices');
-                    netcall.on('devices',(obj)=>{
-                        //console.log('on devices',obj);
                     });
                 });
             },
@@ -357,20 +361,21 @@
                 netcall.setVideoViewSize({
                     width:100,
                     height:100,
-                    cut: true,
+                    cut:true,
                 });
 
                 //设置远程视频画面大小
                 netcall.setVideoViewRemoteSize({
-                    account: to,
+                    account:to,
                     width:this.width,
                     height:this.height,
-                    cut: true,
+                    cut:true,
                 });
 
                 this.controlNimVideoCall(true);
             },
             call(){
+                if(!this.callDone)return alert('请不要频繁发起');
                 let {scene,to}=this.nimChat;
                 let {pushConfig,sessionConfig}=this;
                 const netcallCall=()=>{
@@ -380,18 +385,24 @@
                         pushConfig,
                         sessionConfig,
                         webrtcEnable: true
-                    }).then(function(obj){
+                    }).then((obj)=>{
                         //成功发起呼叫
                         vm.$emit('nimVideoCallSuccess',obj);
                         console.log('call success', obj);
-                    }).catch(function(err){
+                    }).catch((err)=>{
                         console.log(err);
                         //被叫不在线
                         vm.$emit('nimVideoCallFail',err);
                         if(err.event&&err.event.code === 11001){
-                            console.log('callee offline', err);
+                            console.log('callee offline');
                             vm.$emit('nimVideoCallcalleeOffline',err);
                         }
+
+                        //防止频繁发起
+                        clearTimeout(this.callDoneTimer);
+                        this.callDoneTimer=setTimeout(()=>{
+                            this.callDone=true;
+                        },3000);
                     });
 
                     //设置超时计时器
@@ -403,9 +414,8 @@
                     },1000*30);
                 };
 
-                this.netcallInit(()=>{
-                    netcallCall();
-                });
+                this.callDone=false;
+                this.netcallInit(netcallCall);
             },
             response(){
                 let {sessionConfig,netcallInfo}=this;

@@ -2,7 +2,7 @@ import SDK from './SDKs/NIM_Web_SDK_v5.7.0';
 import Netcall from './SDKs/NIM_Web_Netcall_v5.7.0';
 import WebRTC from './SDKs/NIM_Web_WebRTC_v5.7.0';
 import vm from 'src/main';
-import {lStore} from 'js/yydjs';
+import {lStore,copyJson} from 'js/yydjs';
 
 window.Netcall=Netcall;
 window.WebRTC=WebRTC;
@@ -24,7 +24,8 @@ const nimInit=(account,token)=>{
         if(window.nim){
             window.nim.destroy({
                 done:function(err){
-                  window.nim=nimInitFn(account,token);
+                    console.log(1111,err);
+                    window.nim=nimInitFn(account,token);
                 }
             });
         }else{
@@ -401,7 +402,7 @@ const nimInit=(account,token)=>{
             //同步完成
             onsyncdone(){//当上面各个同步（不包括下面的同步群成员）完成后, 会调用此回调；注意, SDK保证在onsyncdone调用的时候上面的同步肯定完成了, 但是不保证各个同步回调的顺序。
                 vm.$emit('nimOnsyncdone');
-                console.log(window.nimData);
+                console.log(copyJson(window.nimData));
             },
         });
     };

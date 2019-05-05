@@ -16,7 +16,6 @@
 
         <div
             class="nimMessageListWrap wrapContainer"
-            ref="nimMessageListWrap"
             v-show="pageControl.nimMessageList"
         >
             <nimMessageList
@@ -26,7 +25,6 @@
 
         <div
             class="nimAddressListWrap wrapContainer"
-            ref="nimAddressListWrap"
             v-show="pageControl.nimAddressList"
         >
             <nimAddressList
@@ -36,7 +34,6 @@
 
         <div
             class="nimChatWrap wrapContainer"
-            ref="nimChatWrap"
             v-show="pageControl.nimChat"
         >
             <nimChat
@@ -46,7 +43,6 @@
 
         <div
             class="nimSearchFriendWrap wrapContainer"
-            ref="nimSearchFriendWrap"
             v-show="pageControl.nimSearchFriend"
         >
             <nimSearchFriend
@@ -56,7 +52,6 @@
 
         <div
             class="nimCreateTeamWrap wrapContainer"
-            ref="nimCreateTeamWrap"
             v-show="pageControl.nimCreateTeam"
         >
             <nimCreateTeam
@@ -66,7 +61,6 @@
 
         <div
             class="nimLoginWrap wrapContainer"
-            ref="nimLoginWrap"
             v-show="pageControl.nimLogin"
         >
             <nimLogin
@@ -148,7 +142,7 @@
             savePageStatus(){
                 sStore.set('pageControl',this.pageControl);
             },
-            controlPage(controlName,refName,show){
+            controlPage(controlName,show){
                 this.pageControl[controlName]=show;
 
                 if(lStore.get('nimAccount')&&lStore.get('nimToken')){
@@ -168,12 +162,12 @@
 
                 switch(index){
                     case 0:
-                            controlPage('nimAddressList','nimAddressListWrap',false);
-                            controlPage('nimMessageList','nimMessageListWrap',true);
+                            this.controlPage('nimAddressList',false);
+                            this.controlPage('nimMessageList',true);
                             break;
                     case 1:
-                            controlPage('nimMessageList','nimMessageListWrap',false);
-                            controlPage('nimAddressList','nimAddressListWrap',true);
+                            this.controlPage('nimMessageList',false);
+                            this.controlPage('nimAddressList',true);
                             break;
                 }
             },
@@ -224,7 +218,7 @@
         }
 
         .tab{
-        	width: 100%;
+            width: 100%;
             height: 40px;
             line-height: 40px;
             border-bottom: 1px solid #ddd;

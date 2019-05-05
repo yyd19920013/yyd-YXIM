@@ -97,20 +97,20 @@
         },
 
         created(){
-        	vm.$on('componentsUpdate',this.componentsUpdate);
+            vm.$on('componentsUpdate',this.componentsUpdate);
             vm.$on('nimOnFriendsAll',this.getFriendsList);
         },
 
         beforeDestroy(){
-        	vm.$off('componentsUpdate',this.componentsUpdate);
+            vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnFriendsAll',this.getFriendsList);
         },
 
         methods:{
-        	componentsUpdate(controlName){
-            	if(controlName!='nimCreateTeam')return;
-            	let {friends}=window.nimData;
-            	
+            componentsUpdate(controlName){
+                if(controlName!='nimCreateTeam')return;
+                let {friends}=window.nimData;
+
                 this.tabIndex=0;
                 this.showNoData=false;
                 this.name='';
@@ -144,6 +144,7 @@
                     ps: `我建了一个${tabIndex==0?'普通群':'高级群'}`,
                     done: (error, obj)=>{
                         if(!error){
+                            window.nimData.teams.push(obj.team);
                             alert('创建群成功');
                             vm.$emit('componentsUpdate','nimAddressList');
                         }else{

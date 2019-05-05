@@ -177,7 +177,7 @@
         },
 
         created(){
-        	vm.$on('componentsUpdate',this.componentsUpdate);
+            vm.$on('componentsUpdate',this.componentsUpdate);
             vm.$on('nimOnFriendsAll',this.getFriendsList);
             vm.$on('nimOnTeamsAll',this.getTeamsList);
             vm.$on('nimOnBlacklistAll',this.getBlacklist);
@@ -186,7 +186,7 @@
         },
 
         beforeDestory(){
-        	vm.$off('componentsUpdate',this.componentsUpdate);
+            vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnFriendsAll',this.getFriendsList);
             vm.$off('nimOnTeamsAll',this.getTeamsList);
             vm.$on('nimOnBlacklistAll',this.getBlacklist);
@@ -195,11 +195,11 @@
         },
 
         methods:{
-        	componentsUpdate(controlName){
-            	if(controlName!='nimSearchFriend')return;
-            	let {friends,teamMembers}=window.nimData;
-            	
-               	this.friendsList=friends;
+            componentsUpdate(controlName){
+                if(controlName!='nimSearchFriend')return;
+                let {friends,teamMembers}=window.nimData;
+
+                this.friendsList=friends;
                 this.teamsList=teamMembers;
             },
             getFriendsList(res){
@@ -223,10 +223,10 @@
                     scene,
                     to,
                 });
-                window.controlPage('nimChat','nimChatWrap',true);
+                window.controlPage('nimChat',true);
             },
             addFriend(){
-                window.controlPage('nimSearchFriend','nimSearchFriendWrap',true);
+                window.controlPage('nimSearchFriend',true);
             },
             passOrRejectFriendApply(handleType,item){
                 let {idServer,from}=item;
@@ -248,6 +248,7 @@
                             done: (error, obj)=>{
                                 if(!error){
                                     alert(handleType==1?`你同意和【${from}】成为好友`:`你拒绝和【${from}】成为好友`);
+
                                 }else{
                                     alert(error);
                                 }
@@ -290,7 +291,7 @@
                 });
             },
             createTeam(){
-                window.controlPage('nimCreateTeam','nimCreateTeamWrap',true);
+                window.controlPage('nimCreateTeam',true);
             },
         },
     }
