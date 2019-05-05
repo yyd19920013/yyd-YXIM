@@ -221,6 +221,7 @@
             width: 100%;
             height: 40px;
             line-height: 40px;
+            background-color: #fff;
             border-bottom: 1px solid #ddd;
             text-align: center;
             position: fixed;
