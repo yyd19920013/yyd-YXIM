@@ -24,7 +24,6 @@ const nimInit=(account,token)=>{
         if(window.nim){
             window.nim.destroy({
                 done:function(err){
-                    console.log(1111,err);
                     window.nim=nimInitFn(account,token);
                 }
             });
