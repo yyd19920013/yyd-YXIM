@@ -3526,6 +3526,27 @@ function computed(num1,operator,num2){
     return result;
 };
 
+//根据后缀名判断文件类型
+function fileType(suffix){
+    var suffix=suffix||'';
+    var typeList=['image','audio','video','file'];
+    var length=typeList.length-1;
+    var suffixJson={
+        image:['png','jpg','jpeg','gif','ico','bmp','pic','tif'],
+        audio:['mp3','ogg','wav','acc','vorbis'],
+        video:['mp4','webm','avi','rmvb','3gp','flv'],
+    };
+    var resultList=[];
+
+    for(var attr in suffixJson){
+        resultList.push(!!~suffixJson[attr].indexOf(suffix));
+    }
+
+    var posIndex=resultList.indexOf(true);
+
+    return posIndex!=-1?typeList[posIndex]:typeList[length];
+};
+
 //axios包装
 //支持回调函数和promise两种风格
 /*
@@ -4173,6 +4194,7 @@ export{
         allHaveValue,
         jsonHasKey,
         computed,
+        fileType,
         cBub,
         pDef,
         copyJson,

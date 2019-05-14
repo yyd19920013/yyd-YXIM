@@ -49,25 +49,25 @@
                                     </a>
                                 </div>
                             </div>
-                            <div
-                                v-if="item.type=='file'"
-                                class="file"
-                            >
+                            <div class="file">
                                 <img
-                                    v-if="item.file.ext=='png'||item.file.ext=='jpg'||item.file.ext=='gif'"
+                                    v-if="item.type=='image'"
                                     :src="item.file.url"
                                     alt="图片"
                                 />
                                 <audio
-                                    v-if="item.file.ext=='mp3'"
+                                    v-if="item.type=='audio'"
                                     :src="item.file.url"
                                     controls
                                 ></audio>
                                 <video
-                                    v-if="item.file.ext=='mp4'"
+                                    v-if="item.type=='video'"
                                     :src="item.file.url"
                                     controls
                                 ></video>
+                                <a v-if="item.type=='file'" :href="item.file.url" download="true" class="download">
+                                    <h3 class="multiLine-2">{{item.file.name}}</h3>
+                                </a>
                             </div>
                             <div v-if="item.attach">
                                 {{netcallMsgJson[item.attach.type]}}
@@ -155,7 +155,7 @@
 <script>
     import nimHeader from './nimHeader';
     import vm from 'src/main';
-    import {lStore,sStore,dateFormat0,resetFile} from 'js/yydjs';
+    import {lStore,sStore,dateFormat0,resetFile,fileType} from 'js/yydjs';
 
     export default{
         data(){
@@ -205,11 +205,11 @@
 
         methods:{
             componentsUpdate(controlName){
-            	if(controlName!='nimChat')return;
+                if(controlName!='nimChat')return;
                 this.nimChat=sStore.get('nimChat')||{};
                 this.msgList=[];
-            	this.getHistoryMsgs();
-            	this.scrollBottom();
+                this.getHistoryMsgs();
+                this.scrollBottom();
             },
             nimVideoCallSuccess(obj){
                 window.showNimVideoCall(true);
@@ -234,7 +234,7 @@
             },
             scrollBottom(){
                 setTimeout(()=>{
-                	let oContent=this.$refs.content;
+                    let oContent=this.$refs.content;
                     let {scene,to}=this.nimChat;
 
                     oContent.scrollTop=oContent.scrollHeight;
@@ -326,17 +326,20 @@
                     type,
                     fileInput,
                     uploadprogress: (obj)=>{
-                        console.log('文件总大小: ' + obj.total + 'bytes');
-                        console.log('已经上传的大小: ' + obj.loaded + 'bytes');
-                        console.log('上传进度: ' + obj.percentage);
-                        console.log('上传进度文本: ' + obj.percentageText);
+                        // console.log('文件总大小: ' + obj.total + 'bytes');
+                        // console.log('已经上传的大小: ' + obj.loaded + 'bytes');
+                        // console.log('上传进度: ' + obj.percentage);
+                        // console.log('上传进度文本: ' + obj.percentageText);
                     },
                     done: (error, file)=>{
                         if(!error){
+                            let type=fileType(file.ext);
+
                             nim.sendFile({
                                 scene,
                                 to,
-                                file,
+                                type,
+                                fileInput,
                                 done: (error1, msg1)=>{
                                     if(!error){
                                         this.msgList=[].concat(this.msgList,[msg1]);
