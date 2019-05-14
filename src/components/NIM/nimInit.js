@@ -386,8 +386,8 @@ const nimInit=(account,token)=>{
                 vm.$emit('nimOnOfflineCustomSysMsgs',sysMsgs);
             },
             oncustomsysmsg(sysMsg){//收到自定义系统通知的回调, 会传入系统通知
-                console.log(sysMsgs);
-                vm.$emit('nimOnCustomSysMsg',sysMsgs);
+                console.log(sysMsg);
+                vm.$emit('nimOnCustomSysMsg',sysMsg);
             },
 
             //收到广播消息
