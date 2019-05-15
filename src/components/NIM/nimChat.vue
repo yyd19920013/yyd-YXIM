@@ -53,16 +53,19 @@
                                 <img
                                     v-if="item.type=='image'"
                                     :src="item.file.url"
+                                    @load="scrollBottom"
                                     alt="图片"
                                 />
                                 <audio
                                     v-if="item.type=='audio'"
                                     :src="item.file.url"
+                                    @load="scrollBottom"
                                     controls
                                 ></audio>
                                 <video
                                     v-if="item.type=='video'"
                                     :src="item.file.url"
+                                    @load="scrollBottom"
                                     controls
                                 ></video>
                                 <a v-if="item.type=='file'" :href="item.file.url" download="true" class="download">
@@ -131,6 +134,16 @@
                 </button>
                 <button
                     type="button"
+                >
+                    <input
+                        class="file"
+                        type="file"
+                        @change="sendFile('file',$event.currentTarget)"
+                    />
+                    发送文件
+                </button>
+                <button
+                    type="button"
                     @click="call"
                 >
                     呼叫
@@ -161,8 +174,10 @@
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
+                idClientList:[],
                 msgList:[],
                 msg:'',
+                scrollTimer:null,
                 dateFormat0,
                 lStore,
                 netcallMsgJson:{
@@ -207,7 +222,9 @@
             componentsUpdate(controlName){
                 if(controlName!='nimChat')return;
                 this.nimChat=sStore.get('nimChat')||{};
+                this.idClientList=[];
                 this.msgList=[];
+                this.msg='';
                 this.getHistoryMsgs();
                 this.scrollBottom();
             },
@@ -233,7 +250,8 @@
                 }
             },
             scrollBottom(){
-                setTimeout(()=>{
+                clearTimeout(this.scrollTimer);
+                this.scrollTimer=setTimeout(()=>{
                     let oContent=this.$refs.content;
                     let {scene,to}=this.nimChat;
 
@@ -273,7 +291,10 @@
 
                 for(let attr in res){
                     if(attr.replace(`${scene}-`,'')==to){
-                        this.msgList=[].concat(this.msgList,res[attr]);
+                        if(!~this.idClientList.indexOf(idClient)){
+                            this.idClientList.push(idClient);
+                            this.msgList=[].concat(this.msgList,res[attr]);
+                        }
                     }
                 }
 
