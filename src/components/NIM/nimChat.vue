@@ -59,13 +59,11 @@
                                 <audio
                                     v-if="item.type=='audio'"
                                     :src="item.file.url"
-                                    @load="scrollBottom"
                                     controls
                                 ></audio>
                                 <video
                                     v-if="item.type=='video'"
                                     :src="item.file.url"
-                                    @load="scrollBottom"
                                     controls
                                 ></video>
                                 <a v-if="item.type=='file'" :href="item.file.url" download="true" class="download">
