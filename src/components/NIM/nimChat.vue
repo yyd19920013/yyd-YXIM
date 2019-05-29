@@ -299,6 +299,7 @@
                 this.scrollBottom();
             },
             sendText(){
+                if(!this.msg)return alert('发送内容不能为空，请重新输入');
                 let {scene,to}=this.nimChat;
 
                 nim.sendText({
