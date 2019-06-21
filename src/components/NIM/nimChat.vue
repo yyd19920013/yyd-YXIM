@@ -201,7 +201,7 @@
         created(){
             vm.$on('componentsUpdate',this.componentsUpdate);
             vm.$on('nimOnConnect',this.getHistoryMsgs);
-            vm.$on('nimOnMsgAll',this.getMsgs);
+            vm.$on('nimOnMsg',this.getMsgs);
             vm.$on('nimVideoCallSuccess',this.nimVideoCallSuccess);
         },
 
@@ -212,7 +212,7 @@
         beforeDestroy(){
             vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnConnect',this.getHistoryMsgs);
-            vm.$off('nimOnMsgAll',this.getMsgs);
+            vm.$off('nimOnMsg',this.getMsgs);
             vm.$off('nimVideoCallSuccess',this.nimVideoCallSuccess);
         },
 
