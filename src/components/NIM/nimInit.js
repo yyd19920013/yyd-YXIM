@@ -22,6 +22,7 @@ const nimInit=(account,token)=>{
     reconnection();
     function reconnection(){
         if(window.nim){
+            return;
             window.nim.destroy({
                 done:function(err){
                     window.nim=nimInitFn(account,token);
@@ -44,6 +45,12 @@ const nimInit=(account,token)=>{
     function pushMsg(msgs){
         if(!Array.isArray(msgs)){
             msgs=[msgs];
+        }
+
+        for(var i=0;i<msgs.length;i++){
+            msgs[i].content=safeParse(msgs[i].content);
+            msgs[i].custom=safeParse(msgs[i].custom);
+            msgs[i].pushPayload=safeParse(msgs[i].pushPayload);
         }
 
         var sessionId=msgs[0].sessionId;
@@ -338,17 +345,14 @@ const nimInit=(account,token)=>{
                 pushMsg(msg);
                 let lastMsgJson={};
 
-                for(let attr in window.nimData.msgs){
-                    lastMsgJson[attr]=window.nimData.msgs[attr][window.nimData.msgs[attr].length-1];
-                    if(lastMsgJson[attr].type=='custom'){
-                        try{
-                            lastMsgJson[attr].content=JSON.parse(lastMsgJson[attr].content);
-                        }catch(e){}
+                setTimeout(function(){
+                    for(let attr in window.nimData.msgs){
+                        lastMsgJson[attr]=window.nimData.msgs[attr][window.nimData.msgs[attr].length-1];
                     }
-                }
 
-                vm.$emit('nimOnMsg',lastMsgJson);
-                vm.$emit('nimOnMsgAll',window.nimData.msgs);
+                    vm.$emit('nimOnMsg',lastMsgJson);
+                    vm.$emit('nimOnMsgAll',window.nimData.msgs);
+                },300);
             },
 
             //系统通知
@@ -407,4 +411,19 @@ const nimInit=(account,token)=>{
     };
 };
 
+function safeParse(json){
+    var json=json;
+
+    if(json){
+        try{
+            json=JSON.parse(json);
+        }catch(e){}
+    }
+
+    return json;
+};
+
 export default nimInit;
+export {
+    safeParse,//安全执行JSON.parse
+};

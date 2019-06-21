@@ -11,7 +11,7 @@
             ref="content"
         >
             <ul class="msgList">
-                <li v-for="(item,index) in msgList">
+                <li v-for="(item,index) in currentMsgList">
                     <div class="title">
                         {{dateFormat0(item.time,'yyyy-MM-dd hh:mm')}}
                     </div>
@@ -164,15 +164,17 @@
 </template>
 
 <script>
-    import nimHeader from './nimHeader';
     import vm from 'src/main';
-    import {lStore,sStore,dateFormat0,resetFile,fileType} from 'js/yydjs';
+    import nimHeader from './nimHeader';
+    import nimInit,{safeParse} from 'components/NIM/nimInit';
+    import {lStore,sStore,copyJson,dateFormat0,resetFile,fileType} from 'js/yydjs';
 
     export default{
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
                 idClientList:[],
+                oldMsgList:[],
                 msgList:[],
                 msg:'',
                 scrollTimer:null,
@@ -184,6 +186,19 @@
                     cancelNetcallBeforeAccept:'通话已取消',
                 },
             }
+        },
+
+        computed:{
+            currentMsgList(){
+                let result=[];
+                let {oldMsgList,msgList}=this;
+                let allMsgList=[].concat(oldMsgList,msgList);
+
+                this.scrollBottom();
+                result=allMsgList;
+                console.log(copyJson(result));
+                return result;
+            },
         },
 
         /*
@@ -206,7 +221,8 @@
         },
 
         mounted(){
-
+            //聊天滚动到底部
+            this.scrollBottom();
         },
 
         beforeDestroy(){
@@ -258,45 +274,54 @@
                 },300);
             },
             getHistoryMsgs(){
+                if(!this.nimChat||!this.nimChat.to)return;
                 let {scene,to}=this.nimChat;
 
                 nim.getHistoryMsgs({
                     scene,
                     to,
-                    limit: 20,
+                    limit: 100,
                     asc: true,
                     done: (error, msg)=>{
                         if(!error){
                             let {msgs}=msg;
 
-                            msgs=msgs.map((item,index)=>{
-                                if(item.type=='custom'){
-                                    item.content=JSON.parse(item.content);
+                            msgs=msgs.filter((item)=>{
+                                let {idClient}=item;
+
+                                if(!~this.idClientList.indexOf(idClient)){
+                                    this.idClientList.push(idClient);
+                                    return true;
                                 }
+                            });
+                            msgs=msgs.map((item,index)=>{
+                                let {content,custom,pushPayload}=item;
+
+                                item.content=safeParse(content);
+                                item.custom=safeParse(custom);
+                                item.pushPayload=safeParse(pushPayload);
                                 return item;
                             });
-                            console.log(msgs);
-                            this.msgList=[].concat(msgs);
-                            this.scrollBottom();
+                            //console.log(copyJson(msgs));
+                            this.oldMsgList=[].concat(msgs);
                         }
                     },
                 });
             },
             getMsgs(res){
-                console.log(res);
-                let msgArr=[];
+                //console.log(copyJson(res));
                 let {scene,to}=this.nimChat;
 
                 for(let attr in res){
                     if(attr.replace(`${scene}-`,'')==to){
+                        let {idClient}=res[attr];
+
                         if(!~this.idClientList.indexOf(idClient)){
                             this.idClientList.push(idClient);
                             this.msgList=[].concat(this.msgList,res[attr]);
                         }
                     }
                 }
-
-                this.scrollBottom();
             },
             sendText(){
                 if(!this.msg)return alert('发送内容不能为空，请重新输入');
@@ -310,8 +335,6 @@
                         this.msg='';
                         if(!error){
                             this.msgList=[].concat(this.msgList,[msg]);
-
-                            this.scrollBottom();
                         }
                     },
                 });
@@ -333,8 +356,6 @@
                         if(!error){
                             msg.content=JSON.parse(msg.content);
                             this.msgList=[].concat(this.msgList,[msg]);
-
-                            this.scrollBottom();
                         }
                     },
                 });
@@ -365,7 +386,6 @@
                                         this.msgList=[].concat(this.msgList,[msg1]);
 
                                         resetFile(fileInput);
-                                        this.scrollBottom();
                                     }
                                 },
                             });
