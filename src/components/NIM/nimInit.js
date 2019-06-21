@@ -343,16 +343,11 @@ const nimInit=(account,token)=>{
             },
             onmsg(msg){//收到消息的回调,会传入消息对象
                 pushMsg(msg);
-                let lastMsgJson={};
+                let msgJson={};
 
-                setTimeout(function(){
-                    for(let attr in window.nimData.msgs){
-                        lastMsgJson[attr]=window.nimData.msgs[attr][window.nimData.msgs[attr].length-1];
-                    }
-
-                    vm.$emit('nimOnMsg',lastMsgJson);
-                    vm.$emit('nimOnMsgAll',window.nimData.msgs);
-                },300);
+				msgJson[msg.scene+'-'+msg.from]=msg;
+                vm.$emit('nimOnMsg',msgJson);
+                vm.$emit('nimOnMsgAll',window.nimData.msgs);
             },
 
             //系统通知

@@ -309,19 +309,21 @@
                 });
             },
             getMsgs(res){
-                //console.log(copyJson(res));
-                let {scene,to}=this.nimChat;
-
-                for(let attr in res){
-                    if(attr.replace(`${scene}-`,'')==to){
-                        let {idClient}=res[attr];
-
-                        if(!~this.idClientList.indexOf(idClient)){
-                            this.idClientList.push(idClient);
-                            this.msgList=[].concat(this.msgList,res[attr]);
-                        }
-                    }
-                }
+            	setTimeout(()=>{
+	                //console.log(copyJson(res));
+	                let {scene,to}=this.nimChat;
+	
+	                for(let attr in res){
+	                    if(attr.replace(`${scene}-`,'')==to){
+	                        let {idClient}=res[attr];
+	
+	                        if(!~this.idClientList.indexOf(idClient)){
+	                            this.idClientList.push(idClient);
+	                            this.msgList=[].concat(this.msgList,res[attr]);
+	                        }
+	                    }
+	                }
+                },300);
             },
             sendText(){
                 if(!this.msg)return alert('发送内容不能为空，请重新输入');
