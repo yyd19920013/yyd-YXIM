@@ -231,7 +231,7 @@ const nimInit=(account,token)=>{
                 vm.$emit('nimOnMyInfoAll',window.nimData.myInfo);
             },
             onupdatemyinfo(user){//当前登录用户在其它端修改自己的个人名片之后的回调,会传入用户名片
-                window.nimData.myInfo=NIM.util.merge(window.nimData.myInfo,user);
+                window.nimData.myInfo=SDK.NIM.util.merge(window.nimData.myInfo,user);
 
                 vm.$emit('nimOnUpdateMyInfo',window.nimData.myInfo);
                 vm.$emit('nimOnMyInfoAll',window.nimData.myInfo);
@@ -345,7 +345,7 @@ const nimInit=(account,token)=>{
                 pushMsg(msg);
                 let msgJson={};
 
-				msgJson[msg.scene+'-'+msg.from]=msg;
+                msgJson[msg.scene+'-'+msg.from]=msg;
                 vm.$emit('nimOnMsg',msgJson);
                 vm.$emit('nimOnMsgAll',window.nimData.msgs);
             },
