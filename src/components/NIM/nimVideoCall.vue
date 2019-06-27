@@ -279,11 +279,17 @@
                 //被叫正忙的通知
                 netcall.off('control');
                 netcall.on('control',(obj)=>{
-                    //取消呼叫倒计时
-                    clearTimeout(this.callTimer);
+                    let {type}=obj;
 
-                    //挂断
-                    this.hangup();
+                    if(type==9){
+                        alerts('对方正忙，请稍后再试');
+
+                        //取消呼叫倒计时
+                        clearTimeout(this.callTimer);
+
+                        //挂断
+                        this.hangup(true);
+                    }
                 });
 
                 //收到挂断通知
