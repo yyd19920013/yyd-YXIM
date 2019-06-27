@@ -276,6 +276,16 @@
                     this.videoLink();
                 });
 
+                //被叫正忙的通知
+                netcall.off('control');
+                netcall.on('control',(obj)=>{
+                    //取消呼叫倒计时
+                    clearTimeout(this.callTimer);
+
+                    //挂断
+                    this.hangup();
+                });
+
                 //收到挂断通知
                 netcall.off('hangup');
                 netcall.on('hangup',(obj)=>{
