@@ -237,6 +237,7 @@
                 if(controlName!='nimChat')return;
                 this.nimChat=sStore.get('nimChat')||{};
                 this.idClientList=[];
+                this.oldMsgList=[];
                 this.msgList=[];
                 this.msg='';
                 this.getHistoryMsgs();
@@ -303,26 +304,26 @@
                                 return item;
                             });
                             //console.log(copyJson(msgs));
-                            this.oldMsgList=[].concat(msgs);
+                            this.oldMsgList=[].concat(this.oldMsgList,msgs);
                         }
                     },
                 });
             },
             getMsgs(res){
-            	setTimeout(()=>{
-	                //console.log(copyJson(res));
-	                let {scene,to}=this.nimChat;
-	
-	                for(let attr in res){
-	                    if(attr.replace(`${scene}-`,'')==to){
-	                        let {idClient}=res[attr];
-	
-	                        if(!~this.idClientList.indexOf(idClient)){
-	                            this.idClientList.push(idClient);
-	                            this.msgList=[].concat(this.msgList,res[attr]);
-	                        }
-	                    }
-	                }
+                setTimeout(()=>{
+                    //console.log(copyJson(res));
+                    let {scene,to}=this.nimChat;
+
+                    for(let attr in res){
+                        if(attr.replace(`${scene}-`,'')==to){
+                            let {idClient}=res[attr];
+
+                            if(!~this.idClientList.indexOf(idClient)){
+                                this.idClientList.push(idClient);
+                                this.msgList=[].concat(this.msgList,res[attr]);
+                            }
+                        }
+                    }
                 },300);
             },
             sendText(){
