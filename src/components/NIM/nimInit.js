@@ -66,7 +66,9 @@ const nimInit=(account,token)=>{
     function nimInitFn(account,token){
         var appKeyArr=[
             'd6d808f3f7906a037b35e79395c6c4e0',//自己
-            '2969cb2602b021155eaee040df91367d',//测试环境
+            '2969cb2602b021155eaee040df91367d',//深圳慢病1
+            '8c923f3881671ad71edd808a744e3c83',//深圳慢病2
+            '1e19aaed924ad8c73bce7e473c17e3fc',//中山1
         ];
         var appKey=appKeyArr[1];
         var account=account||lStore.get('nimAccount');
