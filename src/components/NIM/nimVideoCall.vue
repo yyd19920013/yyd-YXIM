@@ -40,10 +40,10 @@
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
-                netcallType:1,
+                netcallType:0,
                 agentDownloadUrl:'https://yx-web-nosdn.netease.im/package/1543999612/WebAgent_Setup_V2.9.0.1204.zip?download=WebAgent_Setup_V2.9.0.1204.zip',
-                width:document.documentElement.clientWidth,
-                height:document.documentElement.clientHeight,
+                width:320,
+                height:366,
                 showNimVideoCall:false,
                 netcallInited:false,
                 signalInited:false,
@@ -52,7 +52,7 @@
                     needBadge: true,
                     needPushNick: true,
                     pushContent: '',
-                    custom: '测试自定义数据',
+                    custom: '',
                     pushPayload: '',
                     sound: '',
                     forceKeepCalling: 0,
@@ -158,6 +158,7 @@
                 this.showNimVideoCall=show;
             },
             hangup(){
+                if(!window.netcall)return;
                 this.controlNimVideoCall(false);
 
                 netcall.hangup();
@@ -404,8 +405,8 @@
                 let {nimContainer,nimRemoteContainer}=this.createContainer();
                 const videoLinkFn=()=>{
                     //开启麦克风
-                    netcall.startDevice({
-                        type:0,
+                    return netcall.startDevice({
+                        type:Netcall.DEVICE_TYPE_AUDIO_IN,
                     }).then(()=>{
                         //通知对方自己开启了麦克风
                         netcall.control({
