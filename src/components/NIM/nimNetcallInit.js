@@ -1,6 +1,6 @@
-import SDK from './SDKs/NIM_Web_SDK_v5.7.0';
-import Netcall from './SDKs/NIM_Web_Netcall_v5.7.0';
-import WebRTC from './SDKs/NIM_Web_WebRTC_v5.7.0';
+import SDK from './SDKs/NIM_Web_SDK_v6.9.0';
+import Netcall from './SDKs/NIM_Web_Netcall_v6.9.0';
+import WebRTC from './SDKs/NIM_Web_WebRTC_v6.9.0';
 import vm from 'src/main';
 import {lStore} from 'js/yydjs';
 

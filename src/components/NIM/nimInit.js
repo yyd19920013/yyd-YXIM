@@ -1,6 +1,6 @@
-import SDK from './SDKs/NIM_Web_SDK_v5.7.0';
-import Netcall from './SDKs/NIM_Web_Netcall_v5.7.0';
-import WebRTC from './SDKs/NIM_Web_WebRTC_v5.7.0';
+import SDK from './SDKs/NIM_Web_SDK_v6.9.0';
+import Netcall from './SDKs/NIM_Web_Netcall_v6.9.0';
+import WebRTC from './SDKs/NIM_Web_WebRTC_v6.9.0';
 import vm from 'src/main';
 import {lStore,copyJson} from 'js/yydjs';
 
@@ -70,7 +70,7 @@ const nimInit=(account,token)=>{
             '8c923f3881671ad71edd808a744e3c83',//深圳慢病2
             '1e19aaed924ad8c73bce7e473c17e3fc',//中山1
         ];
-        var appKey=appKeyArr[1];
+        var appKey=appKeyArr[3];
         var account=account||lStore.get('nimAccount');
         var token=token||lStore.get('nimToken');
 

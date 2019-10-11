@@ -12,6 +12,10 @@
                     {{item}}
                 </li>
             </ol>
+            <a
+                class="logout"
+                @click="logout"
+            >登出</a>
         </div>
 
         <div
@@ -171,6 +175,12 @@
                             break;
                 }
             },
+            logout(){
+                lStore.remove('nimAccount');
+                lStore.remove('nimToken');
+                alert('登出成功');
+                this.controlPage('nimLogin','nimLoginWrap',true);
+            },
         },
 
         components:{
@@ -218,6 +228,7 @@
         }
 
         .tab{
+            display: flex;
             width: 100%;
             height: 40px;
             line-height: 40px;
@@ -229,6 +240,7 @@
             top: 0;
             z-index: 100;
             .tabWrap{
+                flex: 1;
                 li{
                     float: left;
                     width: 50%;
@@ -241,6 +253,10 @@
                         color: #fff;
                     }
                 }
+            }
+            .logout{
+                width: 80px;
+                border-left: 1px solid #ddd;
             }
         }
     }

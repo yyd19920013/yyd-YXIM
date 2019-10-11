@@ -5,23 +5,26 @@
             active:showNimVideoCall,
         }"
     >
-        <div class="remoteContainer" ref="remoteContainer">
-            <div class="container" ref="container"></div>
-            <div class="handle">
-                <div class="handleWrap">
-                    <button
-                        type="button"
-                        @click="hangup"
-                    >
-                        拒绝
-                    </button>
-                    <button
-                        type="button"
-                        @click="response"
-                    >
-                        接听
-                    </button>
-                </div>
+        <div class="remoteContainer" ref="remoteContainer"></div>
+        <div
+            class="container"
+            ref="container"
+            @click="changeContainer"
+        ></div>
+        <div class="handle">
+            <div class="handleWrap">
+                <button
+                    type="button"
+                    @click="hangup"
+                >
+                    拒绝
+                </button>
+                <button
+                    type="button"
+                    @click="response"
+                >
+                    接听
+                </button>
             </div>
         </div>
     </div>
@@ -37,6 +40,7 @@
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
+                netcallType:1,
                 agentDownloadUrl:'https://yx-web-nosdn.netease.im/package/1543999612/WebAgent_Setup_V2.9.0.1204.zip?download=WebAgent_Setup_V2.9.0.1204.zip',
                 width:document.documentElement.clientWidth,
                 height:document.documentElement.clientHeight,
@@ -57,8 +61,9 @@
                     videoQuality: Netcall.CHAT_VIDEO_QUALITY_HIGH,
                     videoFrameRate: Netcall.CHAT_VIDEO_FRAME_RATE_15,
                     videoBitrate: 0,
-                    recordVideo: false,
-                    recordAudio: false,
+                    recordVideo: true,
+                    recordAudio: true,
+                    recordType: 1,
                     highAudio: false,
                     bypassRtmp: false,
                     rtmpUrl: '',
@@ -74,6 +79,7 @@
                 callTimer:null,
                 callDoneTimer:null,
                 callDone:true,
+                isRemote:true,
             }
         },
 
@@ -106,6 +112,8 @@
             vm.$off('componentsUpdate',this.componentsUpdate);
             vm.$off('nimOnConnect',this.netcallInit);
             clearTimeout(this.callTimer);
+            this.appendContainerTo(true);
+            this.hangup();
         },
 
         methods:{
@@ -116,17 +124,34 @@
                 this.netcallInited=false;
                 this.signalInited=false;
             },
+            //nim音视频
             checkPlatform(endFn){
-                //判断是否是win7或win10
-                if (~platform.os.family.indexOf("Windows")&&(platform.os.version=='7'||platform.os.version=='10')){
+                const checkBrowser1=()=>{
                     //判断是否是Chrome, Edge, IE 11
                     if(/Chrome/gi.test(platform.name)||platform.name=='Microsoft Edge'||(platform.name=='IE'&&platform.version=='11.0')){
                         endFn&&endFn();
                     }else{
                         alert('当前浏览器不支持音视频功能，请使用 Chrome、IE 11 或者 Edge 浏览器');
                     }
+                };
+                const checkBrowser2=()=>{
+                    //判断是否是Chrome, Firefox, Safari
+                    if(/Chrome/gi.test(platform.name)||/Firefox/gi.test(platform.name)||/Safari/gi.test(platform.name)){
+                        endFn&&endFn();
+                    }else{
+                        alert('当前浏览器不支持音视频功能，请使用 Chrome、Firefox 或者 Safari 浏览器');
+                    }
+                };
+
+                if(this.netcallType==0){
+                    //判断是否是win7或win10
+                    if (~platform.os.family.indexOf("Windows")&&(platform.os.version=='7'||platform.os.version=='10')){
+                        checkBrowser1();
+                    }else{
+                        alert('当前系统不支持音视频功能，请使用win7、win10系统');
+                    }
                 }else{
-                    alert('当前系统不支持音视频功能，请使用win7、win10系统');
+                    checkBrowser2();
                 }
             },
             controlNimVideoCall(show){
@@ -159,13 +184,66 @@
                 //停止播放对端音频
                 netcall.stopDevice(Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT);
 
-                //停止信令通道
-                netcall.stopSignal();
+                if(this.netcallType==0){//PCAgent
+                    //停止信令通道
+                    netcall.stopSignal();
+                }
 
+                this.netcallInited=false;
+                this.signalInited=false;
                 this.callDone=true;
             },
+            createContainer(){
+                let nimContainer=document.getElementById('nimContainer');
+                let nimRemoteContainer=document.getElementById('nimRemoteContainer');
+
+                if(!nimContainer||!nimRemoteContainer){
+                    nimContainer=document.createElement('div');
+                    nimRemoteContainer=document.createElement('div');
+
+                    nimContainer.id='nimContainer';
+                    nimRemoteContainer.id='nimRemoteContainer';
+
+                    document.body.appendChild(nimContainer);
+                    document.body.appendChild(nimRemoteContainer);
+                }
+
+                return {nimContainer,nimRemoteContainer};
+            },
+            appendContainerTo(body){
+                let nimContainer=document.getElementById('nimContainer');
+                let nimRemoteContainer=document.getElementById('nimRemoteContainer');
+                let {container,remoteContainer}=this.$refs;
+
+                if(nimContainer&&nimRemoteContainer){
+                    if(body){
+                        document.body.appendChild(nimContainer);
+                        document.body.appendChild(nimRemoteContainer);
+                    }else{
+                        container.appendChild(nimContainer);
+                        remoteContainer.appendChild(nimRemoteContainer);
+                    }
+                }
+            },
+            changeContainer(){
+                let nimContainer=document.getElementById('nimContainer');
+                let nimRemoteContainer=document.getElementById('nimRemoteContainer');
+                let {container,remoteContainer}=this.$refs;
+
+                this.isRemote=!this.isRemote;
+                if(!this.isRemote){
+                    container.appendChild(nimRemoteContainer);
+                    remoteContainer.appendChild(nimContainer);
+                }else{
+                    container.appendChild(nimContainer);
+                    remoteContainer.appendChild(nimRemoteContainer);
+                }
+            },
             netcallInit(endFn){
-                nimNetcallInit(0,this.$refs.container,this.$refs.remoteContainer);
+                let {nimContainer,nimRemoteContainer}=this.createContainer();
+
+                nimNetcallInit(this.netcallType,nimContainer,nimRemoteContainer);
+                this.appendContainerTo(false);
                 this.netcallInited=true;
 
                 //初始化信令
@@ -323,72 +401,88 @@
             },
             videoLink(){
                 let {scene,to}=this.nimChat;
+                let {nimContainer,nimRemoteContainer}=this.createContainer();
+                const videoLinkFn=()=>{
+                    //开启麦克风
+                    netcall.startDevice({
+                        type:0,
+                    }).then(()=>{
+                        //通知对方自己开启了麦克风
+                        netcall.control({
+                            command:Netcall.NETCALL_CONTROL_COMMAND_NOTIFY_AUDIO_ON,
+                        });
 
-                //开启麦克风
-                netcall.startDevice({
-                    type:Netcall.DEVICE_TYPE_AUDIO_IN,
-                }).then(()=>{
-                    //通知对方自己开启了麦克风
-                    netcall.control({
-                        command:Netcall.NETCALL_CONTROL_COMMAND_NOTIFY_AUDIO_ON,
+                        //设置本地音量采集大小, 该API可以在通话过程中动态调用调整自己的音量采集大小
+                        netcall.setCaptureVolume(this.captureVolume);
+
+                        //设置本地音量播放大小, 该API可以在通话过程中动态调用调整自己的音量播放大小(即自己听对端的音量)
+                        netcall.setPlayVolume(this.playVolume);
+
+                        //开启本地音频播放
+                        netcall.startDevice({
+                            type:Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT,
+                        }).catch((err)=>{
+                            console.log(err);
+                        });
+
+                        //开启摄像头
+                        return netcall.startDevice({
+                            type:Netcall.DEVICE_TYPE_VIDEO,
+                            width:this.width,
+                            height:this.height,
+                        }).then(()=>{
+                            //通知对方自己开启了摄像头
+                            netcall.control({
+                                command:Netcall.NETCALL_CONTROL_COMMAND_NOTIFY_VIDEO_ON,
+                            });
+                        }).catch((err)=>{
+                            //通知对方自己的摄像头不可用
+                            netcall.control({
+                                command:Netcall.NETCALL_CONTROL_COMMAND_SELF_CAMERA_INVALID,
+                            });
+                            console.log(err);
+                        });
+                    }).then(()=>{
+                        //开启本地视频预览
+                        netcall.startLocalStream();
+
+                        //开启远程视频预览
+                        netcall.startRemoteStream({
+                            account:to,
+                        });
+
+                        //设置本地视频画面大小
+                        netcall.setVideoViewSize({
+                            width:this.width,
+                            height:this.height,
+                            cut:true,
+                        });
+
+                        //设置远程视频画面大小
+                        netcall.setVideoViewRemoteSize({
+                            account:to,
+                            width:this.width,
+                            height:this.height,
+                            cut:true,
+                        });
+
+                        this.controlNimVideoCall(true);
+                    }).catch(function(err){
+                        console.log(err);
                     });
-                }).catch(function(err){
-                    console.log(err);
-                });
+                };
 
-                //开启摄像头
-                netcall.startDevice({
-                    type:Netcall.DEVICE_TYPE_VIDEO,
-                    width:this.width,
-                    height:this.height,
-                }).then(()=>{
-                    //通知对方自己开启了摄像头
-                    netcall.control({
-                        command:Netcall.NETCALL_CONTROL_COMMAND_NOTIFY_VIDEO_ON,
+                if(this.netcallType==0){//开启PCAgent连接
+                    videoLinkFn();
+                }else{//开启WebRTC连接
+                    netcall.startRtc().then(()=>{
+                        console.log('webrtc连接成功');
+                        return videoLinkFn();
+                    }).catch(function(err){
+                        console.log('发生错误, 结束会话', err);
+                        netcall.leaveChannel();
                     });
-                }).catch((err)=>{
-                    //通知对方自己的摄像头不可用
-                    netcall.control({
-                        command:Netcall.NETCALL_CONTROL_COMMAND_SELF_CAMERA_INVALID,
-                    });
-                    console.log(err);
-                })
-
-                //开启本地视频预览
-                netcall.startLocalStream();
-
-                //开启远程视频预览
-                netcall.startRemoteStream();
-
-                //开启本地音频播放
-                netcall.startDevice({
-                    type:Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT,
-                }).catch((err)=>{
-                    console.log(err);
-                })
-
-                //设置本地音量采集大小, 该API可以在通话过程中动态调用调整自己的音量采集大小
-                netcall.setCaptureVolume(255);
-
-                //设置本地音量播放大小, 该API可以在通话过程中动态调用调整自己的音量播放大小(即自己听对端的音量)
-                netcall.setPlayVolume(255);
-
-                //设置本地视频画面大小
-                netcall.setVideoViewSize({
-                    width:100,
-                    height:100,
-                    cut:true,
-                });
-
-                //设置远程视频画面大小
-                netcall.setVideoViewRemoteSize({
-                    account:to,
-                    width:this.width,
-                    height:this.height,
-                    cut:true,
-                });
-
-                this.controlNimVideoCall(true);
+                }
             },
             call(){
                 if(!this.callDone)return alert('请不要频繁发起');
@@ -409,8 +503,9 @@
                         console.log(err);
                         //被叫不在线
                         vm.$emit('nimVideoCallFail',err);
-                        if(err.event&&err.event.code === 11001){
+                        if(err.event&&err.event.code === 11001||err.event&&err.event.event&&err.event.event.code === 11001){
                             console.log('callee offline');
+                            this.hangup();
                             vm.$emit('nimVideoCallcalleeOffline',err);
                         }
 
@@ -486,48 +581,47 @@
             position: absolute;
             left: 0;
             top: 0;
-            .container{
-                width: 100px;
-                height: 100px;
-                position: absolute;
-                right: 20px;
-                top: 20px;
-                z-index: 10;
-            }
-            .handle{
-                width: 100%;
-                padding: 20px;
-                height: 70px;
-                position: absolute;
-                left: 0;
-                bottom: 0;
-                z-index: 10;
-                .handleWrap{
-                    margin: 0 auto;
-                    text-align: center;
-                    height: 100%;
-                    button{
-                        margin: 0 10px;
-                        height: 100%;
-                    }
-                }
+            /deep/ div{
+                width: 100%!important;
+                height: 100%!important;
+                max-width: 100%;
+                max-height: 100%;
             }
         }
-    }
-</style>
-
-<style lang="scss">
-    .nimVideoCall{
-        .remoteContainer{
-            canvas{
-                width: 100%;
+        .container{
+            width: 100px;
+            height: 100px;
+            position: absolute;
+            right: 20px;
+            top: 20px;
+            z-index: 10;
+            /deep/ div{
+                width: 100%!important;
+                height: 100%!important;
+                max-width: 100%;
+                max-height: 100%;
+            }
+        }
+        /deep/ #nimRemoteContainer,/deep/ #nimContainer,/deep/ canvas{
+            width: 100%;
+            height: 100%;
+        }
+        .handle{
+            width: 100%;
+            padding: 20px;
+            height: 70px;
+            position: absolute;
+            left: 0;
+            bottom: 0;
+            z-index: 10;
+            .handleWrap{
+                margin: 0 auto;
+                text-align: center;
                 height: 100%;
-                position: absolute;
-                left: 0;
-                top: 0;
-                right: 0;
-                bottom: 0;
-                margin: auto;
+                button{
+                    margin: 0 10px;
+                    height: 100%;
+                }
             }
         }
     }

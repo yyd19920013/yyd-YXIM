@@ -271,7 +271,7 @@
                     let {scene,to}=this.nimChat;
 
                     oContent.scrollTop=oContent.scrollHeight;
-                    nim.resetSessionUnread(scene+'-'+to);
+                    window.nim&&nim.resetSessionUnread(scene+'-'+to);
                 },300);
             },
             getHistoryMsgs(){
