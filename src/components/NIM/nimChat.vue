@@ -10,73 +10,93 @@
             class="content scrollContainer"
             ref="content"
         >
-            <ul class="msgList">
-                <li v-for="(item,index) in currentMsgList">
-                    <div class="title">
-                        {{dateFormat0(item.time,'yyyy-MM-dd hh:mm')}}
-                    </div>
-                    <div class="main">
-                        <div
-                            :class="{
-                                msgWrap:true,
-                                other:lStore.get('nimAccount')!=item.from,
-                            }"
-                        >
-                            <div class="nickName">
-                                {{item.fromNick}}
-                            </div>
+            <div
+                class="messageList"
+                ref="messageList"
+                @scroll="scrollLoad($event)"
+            >
+                <div
+                    :class="{
+                        loadingWrap:true,
+                        loading,
+                        finished,
+                    }"
+                >
+                    <h3>
+                        <span>正在加载中</span>
+                    </h3>
+                    <h4>
+                        <span>加载完毕</span>
+                    </h4>
+                </div>
+                <ul>
+                    <li v-for="(item,index) in currentMsgList">
+                        <div class="title">
+                            {{dateFormat0(item.time,'yyyy-MM-dd hh:mm')}}
+                        </div>
+                        <div class="main">
                             <div
-                                v-if="item.type=='text'"
-                                class="msg"
+                                :class="{
+                                    msgWrap:true,
+                                    other:lStore.get('nimAccount')!=item.from,
+                                }"
                             >
-                                {{item.text}}
-                            </div>
-                            <div
-                                v-if="item.type=='custom'"
-                                class="custom"
-                            >
+                                <div class="nickName">
+                                    {{item.fromNick}}
+                                </div>
                                 <div
-                                    v-if="item.content.type=='order'"
-                                    class="order"
+                                    v-if="item.type=='text'"
+                                    class="msg"
                                 >
-                                    <a :href="item.content.link">
-                                        <div class="title">
-                                            {{item.content.title}}
-                                        </div>
-                                        <div class="main">
-                                            {{item.content.main}}
-                                        </div>
+                                    {{item.text}}
+                                </div>
+                                <div
+                                    v-if="item.type=='custom'"
+                                    class="custom"
+                                >
+                                    <div
+                                        v-if="item.content.type=='order'"
+                                        class="order"
+                                    >
+                                        <a :href="item.content.link">
+                                            <div class="title">
+                                                {{item.content.title}}
+                                            </div>
+                                            <div class="main">
+                                                {{item.content.main}}
+                                            </div>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="file">
+                                    <img
+                                        v-if="item.type=='image'"
+                                        :src="item.file.url"
+                                        @load="scrollBottom"
+                                        alt="图片"
+                                    />
+                                    <audio
+                                        v-if="item.type=='audio'"
+                                        :src="item.file.url"
+                                        controls
+                                    ></audio>
+                                    <video
+                                        v-if="item.type=='video'"
+                                        :src="item.file.url"
+                                        controls
+                                    ></video>
+                                    <a v-if="item.type=='file'" :href="item.file.url" download="true" class="download">
+                                        <h3 class="multiLine-2">{{item.file.name}}</h3>
                                     </a>
                                 </div>
-                            </div>
-                            <div class="file">
-                                <img
-                                    v-if="item.type=='image'"
-                                    :src="item.file.url"
-                                    @load="scrollBottom"
-                                    alt="图片"
-                                />
-                                <audio
-                                    v-if="item.type=='audio'"
-                                    :src="item.file.url"
-                                    controls
-                                ></audio>
-                                <video
-                                    v-if="item.type=='video'"
-                                    :src="item.file.url"
-                                    controls
-                                ></video>
-                                <a v-if="item.type=='file'" :href="item.file.url" download="true" class="download">
-                                    <h3 class="multiLine-2">{{item.file.name}}</h3>
-                                </a>
-                            </div>
-                            <div v-if="item.attach">
-                                {{netcallMsgJson[item.attach.type]}}
+                                <div v-if="item.attach">
+                                    {{netcallMsgJson[item.attach.type]}}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </li>
-            </ul>
+                    </li>
+                </ul>
+            </div>
         </section>
 
         <footer class="footer">
@@ -173,6 +193,16 @@
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
+                limit:20,
+                loaded:false,
+                loading:false,
+                finished:false,
+                firstLoad:false,
+                isScrollBottom:true,
+                beginTime:0,
+                endTime:0,
+                lastMsgId:'0',
+                countMsg:[],
                 idClientList:[],
                 oldMsgList:[],
                 msgList:[],
@@ -267,34 +297,60 @@
             scrollBottom(){
                 clearTimeout(this.scrollTimer);
                 this.scrollTimer=setTimeout(()=>{
-                    let oContent=this.$refs.content;
+                    let oContent=this.$refs.messageList;
                     let {scene,to}=this.nimChat;
 
-                    oContent.scrollTop=oContent.scrollHeight;
-                    window.nim&&nim.resetSessionUnread(scene+'-'+to);
-                },300);
+                    if(oContent){
+                        let scrollHeight=oContent.scrollHeight;
+                        let diffHeight=scrollHeight-this.oldHeight;
+
+                        if(this.isScrollBottom){
+                            oContent.scrollTop=scrollHeight;
+                        }else{
+                            oContent.scrollTop=diffHeight;
+                        }
+                    }
+                    nim.resetSessionUnread(scene+'-'+to);
+                },100);
+            },
+            scrollLoad(ev){
+                let {loaded,loading,finished,oldMsgList,countMsg}=this;
+                let {currentTarget}=ev;
+                let scrollTop=currentTarget.scrollTop;
+
+                if(scrollTop==0){
+                    if(loaded&&!finished&&!loading){
+                        this.loading=true;
+                        this.getHistoryMsgs();
+                    }
+                }
             },
             getHistoryMsgs(){
-                if(!this.nimChat||!this.nimChat.to)return;
-                let {scene,to}=this.nimChat;
+                let createDt=new Date()-1000*60*60*24*365;
 
+                if(!this.nimChat||!this.nimChat.to||!createDt)return;
+                let {scene,to}=this.nimChat;
+                let {beginTime,endTime,lastMsgId,limit}=this;
+
+                this.loaded=false;
                 nim.getHistoryMsgs({
                     scene,
                     to,
-                    limit: 100,
-                    asc: true,
-                    done: (error, msg)=>{
+                    beginTime,
+                    endTime,
+                    lastMsgId,
+                    limit,
+                    asc:true,
+                    done:(error,msg)=>{
                         if(!error){
-                            let {msgs}=msg;
+                            let msgs=copyJson(msg.msgs)||[];
+                            let oContent=this.$refs.messageList;
+                            let {time}=msgs[0]||{};
+                            let {idServer}=msgs[msgs.length-1]||{};
 
-                            msgs=msgs.filter((item)=>{
-                                let {idClient}=item;
+                            this.endTime=time;
+                            this.lastMsgId=idServer;
 
-                                if(!~this.idClientList.indexOf(idClient)){
-                                    this.idClientList.push(idClient);
-                                    return true;
-                                }
-                            });
                             msgs=msgs.map((item,index)=>{
                                 let {content,custom,pushPayload}=item;
 
@@ -303,8 +359,42 @@
                                 item.pushPayload=safeParse(pushPayload);
                                 return item;
                             });
+                            msgs=msgs.filter((item)=>{
+                                let {idClient,custom={}}=item;
+
+                                if(!~this.idClientList.indexOf(idClient)){
+                                    this.idClientList.push(idClient);
+                                    return true;
+                                }
+                            });
+
+                            this.oldHeight=oContent.scrollHeight;
+                            this.isScrollBottom=false;
+                            this.countMsg=[].concat(msgs,this.countMsg);
+
+                            if(!msg.msgs.length){
+                                this.finished=true;
+                            }
+
+                            //满足条件则继续拉数据
+                            if(!this.finished&&this.countMsg.length<this.limit){
+                                this.getHistoryMsgs();
+                            }else{
+                                this.oldMsgList=[].concat(this.countMsg,this.oldMsgList);
+                                this.countMsg=[];
+
+                                setTimeout(()=>{
+                                    this.loading=false;
+                                    this.loaded=true;
+                                    if(!this.firstLoad){
+                                        this.firstLoad=true;
+                                        this.isScrollBottom=true;
+                                        this.scrollBottom();
+                                    }
+                                },300);
+                            }
+
                             //console.log(copyJson(msgs));
-                            this.oldMsgList=[].concat(this.oldMsgList,msgs);
                         }
                     },
                 });
@@ -314,14 +404,14 @@
                     //console.log(copyJson(res));
                     let {scene,to}=this.nimChat;
 
+                    if(!scene||!to)return;
+                    this.isScrollBottom=true;
                     for(let attr in res){
-                        if(attr.replace(`${scene}-`,'')==to){
-                            let {idClient}=res[attr];
+                        let {idClient}=res[attr];
 
-                            if(!~this.idClientList.indexOf(idClient)){
-                                this.idClientList.push(idClient);
-                                this.msgList=[].concat(this.msgList,res[attr]);
-                            }
+                        if(!~this.idClientList.indexOf(idClient)){
+                            this.idClientList.push(idClient);
+                            this.msgList=[].concat(this.msgList,res[attr]);
                         }
                     }
                 },300);
@@ -413,63 +503,71 @@
         .content{
             border-top: 40px solid transparent;
             border-bottom: 150px solid transparent;
-            .msgList{
-                li{
-                    padding: 20px 0;
-                    >.title{
-                        line-height: 30px;
-                        text-align: center;
-                        font-size: 12px;
-                        color: #999;
-                    }
-                    >.main{
-                        overflow: hidden;
-                        .msgWrap{
-                            float: right;
-                            width: 70%;
-                            text-align: right;
-                            .nickName{
-                                color: #00ffff;
+            .messageList{
+                height: 100%;
+                overflow: hidden;
+                overflow-y: auto;
+                .loadingWrap{
+                    @include loadingWrap('../../');
+                }
+                ul{
+                    li{
+                        padding: 20px 0;
+                        >.title{
+                            line-height: 30px;
+                            text-align: center;
+                            font-size: 12px;
+                            color: #999;
+                        }
+                        >.main{
+                            overflow: hidden;
+                            .msgWrap{
                                 float: right;
-                                border: 1px solid #00ffff;
-                            }
-                            .msg{
-                                float: right;
-                                margin: 0 10px;
-                            }
-                            .custom{
-                                .order{
+                                width: 70%;
+                                text-align: right;
+                                .nickName{
+                                    color: #00ffff;
+                                    float: right;
+                                    border: 1px solid #00ffff;
+                                }
+                                .msg{
                                     float: right;
                                     margin: 0 10px;
-                                    border: 1px solid #ddd;
-                                    border-radius: 5px;
+                                }
+                                .custom{
+                                    .order{
+                                        float: right;
+                                        margin: 0 10px;
+                                        border: 1px solid #ddd;
+                                        border-radius: 5px;
+                                        text-align: left;
+                                        .title{
+                                            padding: 5px 10px;
+                                            line-height: 20px;
+                                            border-bottom: 1px solid #ddd;
+                                        }
+                                        .main{
+                                            padding: 10px;
+                                            font-size: 12px;
+                                        }
+                                    }
+                                }
+                                .file{
+                                    img,audio,video{
+                                        max-width: 100%;
+                                    }
+                                }
+                                &.other{
+                                    float: left;
                                     text-align: left;
-                                    .title{
-                                        padding: 5px 10px;
-                                        line-height: 20px;
-                                        border-bottom: 1px solid #ddd;
+                                    .nickName{
+                                        color: #ff0000;
+                                        float: left;
+                                        border: 1px solid #ff0000;
                                     }
-                                    .main{
-                                        padding: 10px;
-                                        font-size: 12px;
+                                    .msg,.order{
+                                        float: left;
                                     }
-                                }
-                            }
-                            .file{
-                                img,audio,video{
-                                    max-width: 100%;
-                                }
-                            }
-                            &.other{
-                                float: left;
-                                text-align: left;
-                                .nickName{
-                                    color: #ff0000;
-                                    float: left;
-                                    border: 1px solid #ff0000;
-                                }
-                                .msg,.order{
-                                    float: left;
                                 }
                             }
                         }

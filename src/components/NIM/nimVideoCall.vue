@@ -40,7 +40,7 @@
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
-                netcallType:0,
+                netcallType:1,
                 agentDownloadUrl:'https://yx-web-nosdn.netease.im/package/1543999612/WebAgent_Setup_V2.9.0.1204.zip?download=WebAgent_Setup_V2.9.0.1204.zip',
                 width:320,
                 height:366,
@@ -80,7 +80,22 @@
                 callDoneTimer:null,
                 callDone:true,
                 isRemote:true,
+                microphoneValue:50,
+                voiceValue:50,
             }
+        },
+
+        computed:{
+            captureVolume(){
+                let {microphoneValue}=this;
+
+                return Math.floor(microphoneValue/100*255);
+            },
+            playVolume(){
+                let {voiceValue}=this;
+
+                return Math.floor(voiceValue/100*255);
+            },
         },
 
         /*
@@ -468,7 +483,7 @@
                         });
 
                         this.controlNimVideoCall(true);
-                    }).catch(function(err){
+                    }).catch((err)=>{
                         console.log(err);
                     });
                 };
@@ -590,8 +605,9 @@
             }
         }
         .container{
-            width: 100px;
-            height: 100px;
+            width: 80px;
+            height: 92px;
+            background-color: #000;
             position: absolute;
             right: 20px;
             top: 20px;
