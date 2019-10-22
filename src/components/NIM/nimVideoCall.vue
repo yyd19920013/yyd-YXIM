@@ -63,7 +63,7 @@
                     videoBitrate: 0,
                     recordVideo: true,
                     recordAudio: true,
-                    recordType: !isSafari()?0:1,
+                    recordType: 1,
                     highAudio: false,
                     bypassRtmp: false,
                     rtmpUrl: '',
