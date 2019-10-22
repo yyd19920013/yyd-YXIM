@@ -32,7 +32,7 @@
 
 <script>
     import vm from 'src/main';
-    import {lStore,sStore,Type,alerts} from 'js/yydjs';
+    import {lStore,sStore,Type,alerts,isSafari} from 'js/yydjs';
     import nimInit from './nimInit';
     import nimNetcallInit from './nimNetcallInit';
 
@@ -40,7 +40,7 @@
         data(){
             return{
                 nimChat:sStore.get('nimChat')||{},
-                netcallType:1,
+                netcallType:!isSafari()?0:1,
                 agentDownloadUrl:'https://yx-web-nosdn.netease.im/package/1543999612/WebAgent_Setup_V2.9.0.1204.zip?download=WebAgent_Setup_V2.9.0.1204.zip',
                 width:320,
                 height:366,
@@ -63,7 +63,7 @@
                     videoBitrate: 0,
                     recordVideo: true,
                     recordAudio: true,
-                    recordType: 1,
+                    recordType: !isSafari()?0:1,
                     highAudio: false,
                     bypassRtmp: false,
                     rtmpUrl: '',
@@ -418,6 +418,30 @@
             videoLink(){
                 let {scene,to}=this.nimChat;
                 let {nimContainer,nimRemoteContainer}=this.createContainer();
+                const startRemoteLink=()=>{
+                    //播放对方声音
+                    netcall.startDevice({
+                        type:Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT,
+                    }).catch((err)=>{
+                        console.log(err);
+                    });
+
+                    //设置本地音量播放大小, 该API可以在通话过程中动态调用调整自己的音量播放大小(即自己听对端的音量)
+                    netcall.setPlayVolume(this.playVolume);
+
+                    //预览对方视频画面
+                    netcall.startRemoteStream({
+                        account:to,
+                    });
+
+                    //设置对方预览画面大小
+                    netcall.setVideoViewRemoteSize({
+                        account:to,
+                        width:this.width,
+                        height:this.height,
+                        cut:true,
+                    });
+                };
                 const videoLinkFn=()=>{
                     //开启麦克风
                     return netcall.startDevice({
@@ -430,16 +454,6 @@
 
                         //设置本地音量采集大小, 该API可以在通话过程中动态调用调整自己的音量采集大小
                         netcall.setCaptureVolume(this.captureVolume);
-
-                        //设置本地音量播放大小, 该API可以在通话过程中动态调用调整自己的音量播放大小(即自己听对端的音量)
-                        netcall.setPlayVolume(this.playVolume);
-
-                        //开启本地音频播放
-                        netcall.startDevice({
-                            type:Netcall.DEVICE_TYPE_AUDIO_OUT_CHAT,
-                        }).catch((err)=>{
-                            console.log(err);
-                        });
 
                         //开启摄像头
                         return netcall.startDevice({
@@ -459,31 +473,22 @@
                             console.log(err);
                         });
                     }).then(()=>{
-                        //开启本地视频预览
+                        //预览本地画面
                         netcall.startLocalStream();
 
-                        //开启远程视频预览
-                        netcall.startRemoteStream({
-                            account:to,
-                        });
-
-                        //设置本地视频画面大小
+                        //设置本地预览画面大小
                         netcall.setVideoViewSize({
                             width:this.width,
                             height:this.height,
                             cut:true,
                         });
 
-                        //设置远程视频画面大小
-                        netcall.setVideoViewRemoteSize({
-                            account:to,
-                            width:this.width,
-                            height:this.height,
-                            cut:true,
-                        });
-
+                        if(this.netcallType==0){
+                            //开启远程音视频连接
+                            startRemoteLink();
+                        }
                         this.controlNimVideoCall(true);
-                    }).catch((err)=>{
+                    }).catch(function(err){
                         console.log(err);
                     });
                 };
@@ -491,6 +496,12 @@
                 if(this.netcallType==0){//开启PCAgent连接
                     videoLinkFn();
                 }else{//开启WebRTC连接
+                    //在回调里监听对方加入通话，并显示对方的视频画面
+                    netcall.on('remoteTrack', function(obj) {
+                        console.log('user join', obj)
+                        //开启远程音视频连接
+                        startRemoteLink();
+                    });
                     netcall.startRtc().then(()=>{
                         console.log('webrtc连接成功');
                         return videoLinkFn();
@@ -622,6 +633,10 @@
         /deep/ #nimRemoteContainer,/deep/ #nimContainer,/deep/ canvas{
             width: 100%;
             height: 100%;
+        }
+        /deep/ #nimContainer video{
+            width: auto!important;
+            height: 100%!important;
         }
         .handle{
             width: 100%;
