@@ -1,7 +1,7 @@
 <template>
     <div class="nimChat">
         <nimHeader :parent="parent" :controlPageName="'nimChat'" :title="nimChat.to" />
-        <section class="content scrollContainer" ref="content">
+        <section class="content scrollContainer">
             <div class="messageList" ref="messageList" @scroll="scrollLoad($event)">
                 <div :class="{
                         loadingWrap:true,
@@ -129,6 +129,7 @@ export default {
             msgList: [],
             msg: '',
             scrollTimer: null,
+            oldHeight: 0,
             dateFormat0,
             lStore,
             netcallMsgJson: {
@@ -218,17 +219,17 @@ export default {
         scrollBottom() {
             clearTimeout(this.scrollTimer);
             this.scrollTimer = setTimeout(() => {
-                let oContent = this.$refs.messageList;
+                let oMessageList = this.$refs.messageList;
                 let { scene, to } = this.nimChat;
 
-                if (oContent) {
-                    let scrollHeight = oContent.scrollHeight;
+                if (oMessageList) {
+                    let scrollHeight = oMessageList.scrollHeight;
                     let diffHeight = scrollHeight - this.oldHeight;
 
                     if (this.isScrollBottom) {
-                        oContent.scrollTop = scrollHeight;
+                        oMessageList.scrollTop = scrollHeight;
                     } else {
-                        oContent.scrollTop = diffHeight;
+                        oMessageList.scrollTop = diffHeight;
                     }
                 }
                 nim.resetSessionUnread(scene + '-' + to);
@@ -265,7 +266,7 @@ export default {
                 done: (error, msg) => {
                     if (!error) {
                         let msgs = copyJson(msg.msgs) || [];
-                        let oContent = this.$refs.messageList;
+                        let oMessageList = this.$refs.messageList;
                         let { time } = msgs[0] || {};
                         let { idServer } = msgs[msgs.length - 1] || {};
 
@@ -289,7 +290,7 @@ export default {
                             }
                         });
 
-                        this.oldHeight = oContent.scrollHeight;
+                        this.oldHeight = oMessageList.scrollHeight;
                         this.isScrollBottom = false;
                         this.countMsg = [].concat(msgs, this.countMsg);
 
@@ -341,6 +342,7 @@ export default {
             if (!this.msg) return alert('发送内容不能为空，请重新输入');
             let { scene, to } = this.nimChat;
 
+            this.isScrollBottom = true;
             nim.sendText({
                 scene,
                 to,
@@ -356,6 +358,7 @@ export default {
         sendCustomMsg() {
             let { scene, to } = this.nimChat;
 
+            this.isScrollBottom = true;
             nim.sendCustomMsg({
                 scene,
                 to,
@@ -377,6 +380,7 @@ export default {
         sendFile(type, fileInput) {
             let { scene, to } = this.nimChat;
 
+            this.isScrollBottom = true;
             nim.previewFile({
                 type,
                 fileInput,
