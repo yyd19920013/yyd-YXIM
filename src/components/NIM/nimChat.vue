@@ -188,6 +188,11 @@ export default {
         componentsUpdate(controlName) {
             if (controlName != 'nimChat') return;
             this.nimChat = sStore.get('nimChat') || {};
+            this.loaded = false;
+            this.loading = false;
+            this.finished = false;
+            this.firstLoad = false;
+            this.isScrollBottom = true;
             this.idClientList = [];
             this.oldMsgList = [];
             this.msgList = [];
