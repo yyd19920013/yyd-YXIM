@@ -106,7 +106,7 @@
 </template>
 <script>
 import vm from 'src/main';
-import nimHeader from './nimHeader';
+import nimHeader from 'components/NIM/nimHeader';
 import nimInit, { safeParse } from 'components/NIM/nimInit';
 import { lStore, sStore, copyJson, dateFormat0, resetFile, fileType } from 'js/yydjs';
 

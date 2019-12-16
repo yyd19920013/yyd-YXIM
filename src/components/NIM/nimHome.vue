@@ -32,14 +32,14 @@
     </div>
 </template>
 <script>
-import nimLogin from './nimLogin';
-import nimMessageList from './nimMessageList';
-import nimAddressList from './nimAddressList';
-import nimChat from './nimChat';
-import nimSearchFriend from './nimSearchFriend';
-import nimCreateTeam from './nimCreateTeam';
-import nimVideoCall from './nimVideoCall';
-import nimInit from './nimInit';
+import nimLogin from 'components/NIM/nimLogin';
+import nimMessageList from 'components/NIM/nimMessageList';
+import nimAddressList from 'components/NIM/nimAddressList';
+import nimChat from 'components/NIM/nimChat';
+import nimSearchFriend from 'components/NIM/nimSearchFriend';
+import nimCreateTeam from 'components/NIM/nimCreateTeam';
+import nimVideoCall from 'components/NIM/nimVideoCall';
+import nimInit from 'components/NIM/nimInit';
 import vm from 'src/main';
 import { bind, unbind, lStore, sStore } from 'js/yydjs';
 
