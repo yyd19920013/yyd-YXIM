@@ -106,8 +106,8 @@
 </template>
 <script>
 import vm from 'src/main';
-import nimHeader from 'components/NIM/nimHeader';
-import nimInit, { safeParse } from 'components/NIM/nimInit';
+import nimHeader from './nimHeader';
+import nimInit, { safeParse } from './nimInit';
 import { lStore, sStore, copyJson, dateFormat0, resetFile, fileType } from 'js/yydjs';
 
 export default {
@@ -353,9 +353,16 @@ export default {
                 to,
                 text: this.msg,
                 done: (error, msg) => {
-                    this.msg = '';
                     if (!error) {
-                        this.msgList = [].concat(this.msgList, [msg]);
+                        let { content, custom, pushPayload } = msg;
+
+                        this.msg = '';
+                        msg.content = safeParse(content);
+                        msg.custom = safeParse(custom);
+                        msg.pushPayload = safeParse(pushPayload);
+                        if (!error) {
+                            this.msgList = [].concat(this.msgList, [msg]);
+                        }
                     }
                 },
             });
@@ -374,9 +381,13 @@ export default {
                     link: '//www.baidu.com',
                 }),
                 done: (error, msg) => {
-                    this.msg = '';
                     if (!error) {
-                        msg.content = JSON.parse(msg.content);
+                        let { content, custom, pushPayload } = msg;
+
+                        this.msg = '';
+                        msg.content = safeParse(content);
+                        msg.custom = safeParse(custom);
+                        msg.pushPayload = safeParse(pushPayload);
                         this.msgList = [].concat(this.msgList, [msg]);
                     }
                 },
@@ -406,6 +417,11 @@ export default {
                             fileInput,
                             done: (error1, msg1) => {
                                 if (!error) {
+                                    let { content, custom, pushPayload } = msg1;
+
+                                    msg1.content = safeParse(content);
+                                    msg1.custom = safeParse(custom);
+                                    msg1.pushPayload = safeParse(pushPayload);
                                     this.msgList = [].concat(this.msgList, [msg1]);
 
                                     resetFile(fileInput);

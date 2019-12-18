@@ -20,8 +20,8 @@
 <script>
 import vm from 'src/main';
 import { lStore, sStore, Type, alerts, isSafari } from 'js/yydjs';
-import nimInit from 'components/NIM/nimInit';
-import nimNetcallInit from 'components/NIM/nimNetcallInit';
+import nimInit from './nimInit';
+import nimNetcallInit from './nimNetcallInit';
 
 export default {
     data() {

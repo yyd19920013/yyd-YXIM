@@ -36,7 +36,7 @@
 </template>
 <script>
 import vm from 'src/main';
-import nimHeader from 'components/NIM/nimHeader';
+import nimHeader from './nimHeader';
 
 export default {
     data() {

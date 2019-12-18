@@ -48,7 +48,7 @@
     </div>
 </template>
 <script>
-import nimHeader from 'components/NIM/nimHeader';
+import nimHeader from './nimHeader';
 import vm from 'src/main';
 
 export default {

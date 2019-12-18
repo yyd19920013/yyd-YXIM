@@ -27,8 +27,8 @@
     </div>
 </template>
 <script>
-import nimHeader from 'components/NIM/nimHeader';
-import nimInit from 'components/NIM/nimInit';
+import nimHeader from './nimHeader';
+import nimInit from './nimInit';
 import { lStore } from 'js/yydjs';
 
 export default {
