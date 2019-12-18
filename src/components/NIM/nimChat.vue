@@ -193,6 +193,10 @@ export default {
             this.finished = false;
             this.firstLoad = false;
             this.isScrollBottom = true;
+            this.beginTime = 0;
+            this.endTime = 0;
+            this.lastMsgId = '0';
+            this.countMsg = [];
             this.idClientList = [];
             this.oldMsgList = [];
             this.msgList = [];
