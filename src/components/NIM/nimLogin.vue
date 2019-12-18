@@ -45,6 +45,8 @@ export default {
                 '42034dfbd1cf43ec89bc643e04804e28', //杨凯，深圳慢病1
                 '92cce3dc3ee648908840a0d7f3315cc2', //李军，深圳慢病2
                 'defea7a58f73424b9b438b4b75e05ad4', //张静，中山1
+                '0f1f7d0baa8d41fc9b6bb47c0f6cbebf', //医生张佑轩，佛山
+                '59c1e6832199421c8945c27f68146dd2', //居民岩，佛山
             ],
             tokenArr: [
                 'a7a1145cc852fd504e4e16d33d45323b',
@@ -56,6 +58,8 @@ export default {
                 'ebadfeb6b600576e237ed74b52db2a51',
                 '69bd0860c40b3b9260a01c321296c8f6',
                 'c8d73c4f8802ce95498dc7900c631801',
+                'e2dad236ed6cf50dbd3e4f49a5c2b01f',
+                '5729b91d92736c6bae024476367441f5',
             ],
         }
     },
