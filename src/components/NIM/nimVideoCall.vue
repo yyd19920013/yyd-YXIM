@@ -19,9 +19,9 @@
 </template>
 <script>
 import vm from 'src/main';
-import { lStore, sStore, Type, alerts, isSafari } from 'js/yydjs';
 import nimInit from './nimInit';
 import nimNetcallInit from './nimNetcallInit';
+import { lStore, sStore, Type, alerts, isSafari } from 'js/yydjs';
 
 export default {
     data() {
